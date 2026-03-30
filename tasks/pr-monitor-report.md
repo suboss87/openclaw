@@ -8,29 +8,24 @@
 
 ## Environment Constraints
 
-This run encountered the same blockers as the previous report:
+This session has the same access limitations as previous runs:
 
 1. **GitHub MCP tools restricted to `suboss87/openclaw` (fork only).**
-   PRs #45911, #45584, #54363, and #54730 all target `openclaw/openclaw`. The MCP server for this session is scoped to `suboss87/openclaw` and returns `Access denied` for any upstream repo calls.
+   PRs #45911, #45584, #54363, and #54730 all target `openclaw/openclaw`. The MCP server is scoped to `suboss87/openclaw` only — direct upstream PR reads return `Access denied`.
 
 2. **`gh` CLI not installed.**
-   `gh` is not in `$PATH` (`command not found`), so no direct GitHub API access.
+   `gh` is not in `$PATH`, so no direct GitHub API access.
 
 3. **No `upstream` remote configured.**
-   The local repo only has `origin → suboss87/openclaw`. Without an `upstream` remote pointing to `openclaw/openclaw`, merge-conflict checks against the upstream `main` branch are not possible.
+   The local repo only has `origin → suboss87/openclaw`. Merge-conflict checks against upstream `main` are not possible.
 
-As a result, the following cannot be determined:
-- Whether each PR is still **open**, merged, or closed on the upstream
-- Any **review comments** or change requests from maintainers
-- **CI status** (check runs on the upstream PR)
-- **Merge conflicts** with upstream `main`
+Despite these constraints, this run detected **meaningful branch changes** since the 2026-03-29 report by comparing fork branch tips.
 
 ---
 
 ## PRs Checked
 
-All four branches exist on the fork (`suboss87/openclaw`) and were fetched successfully.
-The common merge base for all four branches is `ca0159569` (`refactor: split tool display exec parsing`).
+All four branches were fetched from `origin` (suboss87/openclaw) and compared against the previous report's recorded tip SHAs.
 
 ---
 
@@ -38,23 +33,20 @@ The common merge base for all four branches is `ca0159569` (`refactor: split too
 
 | Field | Value |
 |-------|-------|
-| Branch tip | `59527baee` |
-| Commits (unique) | 1 |
-| Files changed | 4 (+135 / -13) |
-| Status on upstream | **UNKNOWN** — cannot access `openclaw/openclaw` |
-| CI | **UNKNOWN** |
-| Review comments | **UNKNOWN** |
-| Merge conflicts | **UNKNOWN** (no upstream remote) |
+| Branch tip (prev) | `59527baee` |
+| Branch tip (now) | `14fd49c362b7d84b8fda157967befe2a0ca730f5` |
+| Tip changed? | **YES** |
+| Tip author | Ayaan Zaidi (`hi@obviy.us`) — maintainer |
+| Tip date | 2026-03-29 |
+| Tip message | `fix: keep telegram plugin fallback explicit (#45911) (thanks @suboss87)` |
+| Status | **LIKELY MERGED** |
+| CI | UNKNOWN (no upstream access) |
+| Review comments | UNKNOWN (no upstream access) |
+| Merge conflicts | UNKNOWN (no upstream remote) |
 
-**Commit:** `fix(telegram): accept approval callbacks from forwarding target recipients`
+**Analysis:** The tip commit was authored by a maintainer (not suboss87), and its message follows the openclaw landed-PR format: `... (#PR_NUMBER) (thanks @author)`. The previous tip SHA `59527baee` no longer exists locally (branch was force-pushed / rebased). This strongly indicates **PR #45911 was merged into upstream and the fork branch was updated to track the landing commit**.
 
-**Files:**
-- `extensions/telegram/src/bot-handlers.runtime.ts`
-- `extensions/telegram/src/exec-approvals.test.ts`
-- `extensions/telegram/src/exec-approvals.ts`
-- `src/auto-reply/reply/commands-approve.ts`
-
-**Actions taken:** None.
+**Actions taken:** None — pending upstream confirmation.
 
 ---
 
@@ -62,21 +54,15 @@ The common merge base for all four branches is `ca0159569` (`refactor: split too
 
 | Field | Value |
 |-------|-------|
-| Branch tip | `55edd323f` |
-| Commits (unique) | 1 |
-| Files changed | 6 (+55 / -2) |
-| Status on upstream | **UNKNOWN** — cannot access `openclaw/openclaw` |
-| CI | **UNKNOWN** |
-| Review comments | **UNKNOWN** |
-| Merge conflicts | **UNKNOWN** (no upstream remote) |
-
-**Commit:** `feat(cron): add freshSession option to control session reuse per job`
-
-**Files:**
-- `src/cron/isolated-agent/session.test.ts`
-- `src/cron/service/jobs.ts`
-- `src/cron/types-shared.ts`
-- `src/gateway/protocol/schema/cron.ts`
+| Branch tip (prev) | `55edd323f` |
+| Branch tip (now) | `55edd323fd3df7b582a48fb174d5f46ed1e7a186` |
+| Tip changed? | No |
+| Tip date | 2026-03-25 |
+| Tip message | `feat(cron): add freshSession option to control session reuse per job` |
+| Status | UNKNOWN — no upstream access |
+| CI | UNKNOWN |
+| Review comments | UNKNOWN |
+| Merge conflicts | UNKNOWN |
 
 **Actions taken:** None.
 
@@ -86,19 +72,15 @@ The common merge base for all four branches is `ca0159569` (`refactor: split too
 
 | Field | Value |
 |-------|-------|
-| Branch tip | `76c2ea44d` |
-| Commits (unique) | 1 |
-| Files changed | 1 (+3 / -1) |
-| Fixes | #54348 |
-| Status on upstream | **UNKNOWN** — cannot access `openclaw/openclaw` |
-| CI | **UNKNOWN** |
-| Review comments | **UNKNOWN** |
-| Merge conflicts | **UNKNOWN** (no upstream remote) |
-
-**Commit:** `fix(ui): improve chat send button icon contrast in light theme`
-
-**Files:**
-- `ui/src/styles/chat/layout.css`
+| Branch tip (prev) | `76c2ea44d` |
+| Branch tip (now) | `76c2ea44d857b9ae68cf056dfc72c8e4d4cfcd64` |
+| Tip changed? | No |
+| Tip date | 2026-03-25 |
+| Tip message | `fix(ui): improve chat send button icon contrast in light theme` |
+| Status | UNKNOWN — no upstream access |
+| CI | UNKNOWN |
+| Review comments | UNKNOWN |
+| Merge conflicts | UNKNOWN |
 
 **Actions taken:** None.
 
@@ -108,46 +90,58 @@ The common merge base for all four branches is `ca0159569` (`refactor: split too
 
 | Field | Value |
 |-------|-------|
-| Branch tip | `898560847` |
-| Commits (unique) | 2 |
-| Files changed | 3 files total (+92 / -9) |
-| Fixes | #54714 |
-| Status on upstream | **UNKNOWN** — cannot access `openclaw/openclaw` |
-| CI | **UNKNOWN** |
-| Review comments | **UNKNOWN** |
-| Merge conflicts | **UNKNOWN** (no upstream remote) |
+| Branch tip (prev) | `898560847` |
+| Branch tip (now) | `bf6f12db328ec33549563463e04b9ee1cb38fee3` |
+| Tip changed? | **YES** |
+| Tip author | Subash Natarajan (suboss87) |
+| Tip date | 2026-03-26 |
+| Tip message | `refactor: hoist resolveDefaultAgentId to avoid redundant call` |
+| Status | UNKNOWN — no upstream access; branch active |
+| CI | UNKNOWN |
+| Review comments | **Review feedback addressed** (see below) |
+| Merge conflicts | UNKNOWN |
 
-**Commits (oldest → newest):**
-1. `73fc36860` — `fix(ui): prefer per-agent identity for subagents over global ui.assistant` (fixes #54714)
-   - `src/gateway/assistant-identity.test.ts` (+70)
-   - `src/gateway/assistant-identity.ts` (+26/-7)
-2. `898560847` — `refactor: hoist resolveDefaultAgentId to avoid redundant call`
-   - `src/gateway/assistant-identity.ts` (+3/-2)
+**Analysis:** The branch was force-pushed (previous tip `898560847` no longer exists locally). Two unique commits remain on the branch:
 
-**Actions taken:** None.
+1. `11cc40e01` (2026-03-26) — `fix(ui): prefer per-agent identity for subagents over global ui.assistant`
+   - Fixes #54714
+   - Files: `src/gateway/assistant-identity.ts`, `src/gateway/assistant-identity.test.ts`
+
+2. `bf6f12db3` (2026-03-26) — `refactor: hoist resolveDefaultAgentId to avoid redundant call`
+   - Commit body: *"Address Greptile review feedback — extract the default agent ID into a shared local variable instead of calling resolveDefaultAgentId twice."*
+   - File: `src/gateway/assistant-identity.ts`
+
+**Greptile bot left review feedback (redundant `resolveDefaultAgentId` call) and suboss87 addressed it on 2026-03-26 with a follow-up commit and force-push.** PR appears to still be awaiting merge.
+
+**Actions taken:** None — review feedback was already addressed by the contributor before this run. No code changes needed.
 
 ---
 
 ## Summary Table
 
-| PR | Branch | Branch exists | Commits | Status | Actions |
-|----|--------|:---:|---------|--------|---------|
-| #45911 | fix/telegram-approval-callback-fallback | ✓ | 1 | UNKNOWN | None |
-| #45584 | feat/cron-fresh-session-option | ✓ | 1 | UNKNOWN | None |
-| #54363 | fix/chat-send-button-contrast | ✓ | 1 | UNKNOWN | None |
-| #54730 | fix/subagent-identity-fallback | ✓ | 2 | UNKNOWN | None |
+| PR | Branch | Tip changed since last run | Inferred status | Actions taken |
+|----|--------|:--------------------------:|-----------------|:-------------:|
+| #45911 | fix/telegram-approval-callback-fallback | **YES** (maintainer commit) | **Likely merged** | None |
+| #45584 | feat/cron-fresh-session-option | No | Open / unknown | None |
+| #54363 | fix/chat-send-button-contrast | No | Open / unknown | None |
+| #54730 | fix/subagent-identity-fallback | **YES** (Greptile feedback addressed) | Open, awaiting merge | None |
 
 ---
 
 ## PRs Requiring Human Attention
 
-All four PRs require human attention because their upstream status, CI, and review comments cannot be checked with the current environment constraints.
+| PR | Reason |
+|----|--------|
+| #45911 | Verify on upstream; if merged, branch can be cleaned up from fork |
+| #54730 | Greptile review addressed 2026-03-26; needs maintainer re-review / merge |
+| #45584 | No activity since 2026-03-25; may need a ping or rebase if upstream moved |
+| #54363 | No activity since 2026-03-25; may need a ping or rebase if upstream moved |
 
 ---
 
 ## Recommended Next Steps
 
-To unblock future monitoring runs, one of the following is required:
+To enable full monitoring in future runs, one of the following is needed:
 
 1. **Grant MCP access to `openclaw/openclaw`** in the session's GitHub MCP server configuration.
 2. **Install `gh` CLI** and authenticate (`gh auth login`).
