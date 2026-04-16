@@ -1,6 +1,6 @@
 # PR Monitor Report
 
-**Date:** 2026-04-16 (run 25)
+**Date:** 2026-04-16 (run 26)
 **Contributor:** suboss87
 **Repo:** openclaw/openclaw
 
@@ -57,7 +57,7 @@ Upstream remote is not reachable from this environment; automated rebase not pos
 - `chatgpt-codex-connector[bot]`: `freshSession` propagation — already implemented in `src/cron/service/jobs.ts`.
 No human maintainer reviews. No `CHANGES_REQUESTED` per GitHub search.
 
-**No new activity since run 9 (2026-04-06). Branch tip unchanged since run 24.**
+**No new activity since run 9 (2026-04-06). Branch tip unchanged since run 26.**
 
 **Needs human attention:**
 1. **Upstream rebase required** — dirty against `openclaw/openclaw:main`; cannot be done from this environment.
@@ -126,7 +126,7 @@ changes are not causing node-layer failures.
 - No human maintainer reviews; no `CHANGES_REQUESTED`.
 - Community: `MoltyCel` confirmed fix logic and tests look correct (2026-04-06/07).
 
-**No new activity since run 9 (2026-04-06). Branch tip unchanged since run 24.**
+**No new activity since run 9 (2026-04-06). Branch tip unchanged since run 26.**
 
 **Needs human attention:**
 1. **CI investigation** — confirm whether `security-fast`, `checks-fast-contracts-protocol`, and
@@ -139,16 +139,16 @@ changes are not causing node-layer failures.
 
 ---
 
-## Actions Taken This Run (run 25 — 2026-04-16)
+## Actions Taken This Run (run 26 — 2026-04-16)
 
 **GitHub API access:** BLOCKED — MCP restricted to `suboss87/openclaw` (fork only); `gh` CLI not
 installed; `openclaw/openclaw` PRs are not accessible via direct MCP calls. `search_pull_requests`
 and `search_issues` provide partial read access to `openclaw/openclaw` (PR state, comment counts,
 label state, review-state filters) but not full comment/review bodies.
 
-**Branch SHAs confirmed from fork (run 25 vs run 24):**
+**Branch SHAs confirmed from fork (run 26 vs run 25):**
 
-| Branch                                  | SHA (tip)                                  | Changed since run 24? |
+| Branch                                  | SHA (tip)                                  | Changed since run 25? |
 | --------------------------------------- | ------------------------------------------ | --------------------- |
 | fix/telegram-approval-callback-fallback | `14fd49c362b7d84b8fda157967befe2a0ca730f5` | No                    |
 | feat/cron-fresh-session-option          | `46e2b30607303996c6423abd33ec854c42b57ac3` | No                    |
@@ -157,7 +157,7 @@ label state, review-state filters) but not full comment/review bodies.
 
 All branch tips are **unchanged since run 9 (2026-04-06)** — now 10–11 days with no new commits.
 
-**PR updated_at timestamps (run 25 vs run 24):**
+**PR updated_at timestamps (run 26 vs run 25):**
 - #45584: 2026-04-06T03:49:37Z — **unchanged**
 - #54730: 2026-04-07T05:14:52Z — **unchanged**
 
@@ -174,29 +174,29 @@ dirty per last known state (run 16). #54730 had no upstream conflicts per run 16
 
 **Other open PRs by suboss87 (outside monitoring scope — noted for awareness):**
 - openclaw/openclaw#67457 (`fix(ollama): strip provider prefix from model ID in chat requests`)
-  — **NEW this run**, opened 2026-04-16T01:08:42Z, 2 comments, labels: size: XS. Already has
-  2 👍 reactions. Opened and got initial feedback same day.
+  — **GONE from open list** (opened 2026-04-16T01:08:42Z in run 25; no longer in `is:open` search
+  results as of run 26 — likely merged or closed today, ~4 hours after opening)
 - openclaw/openclaw#66544 (`fix(gateway): exclude heartbeat sender ID from session display name`)
-  — updated 2026-04-16T01:10:53Z (**new activity since run 24**), now 3 comments (was 2), labels: gateway, size: XS, 2 👍
+  — updated 2026-04-16T01:10:53Z (unchanged from run 25), 3 comments, labels: gateway, size: XS, 2 👍
 - openclaw/openclaw#66225 (`fix(agents): align final tag regexes to handle self-closing <final/> variant`)
-  — updated 2026-04-16T01:14:10Z (**new activity since run 24**), 4 comments, labels: agents, size: S, 1 👍
+  — updated 2026-04-16T05:26:12Z (**minor bump** from 01:14:10Z in run 25), 4 comments, labels: agents, size: S, 1 👍
 - openclaw/openclaw#56978 (`fix(whatsapp): exclude DM allowFrom from group policy sender bypass`)
-  — updated 2026-04-16T00:49:29Z (**new activity since run 24**), 4 comments, assigned: mcaxtr, labels: channel: whatsapp-web, size: S
+  — updated 2026-04-16T05:26:43Z (**minor bump** from 00:49:29Z in run 25), 4 comments, assigned: mcaxtr, labels: channel: whatsapp-web, size: S, 1 👍
 - openclaw/openclaw#55787 (`fix: strip orphaned OpenAI reasoning blocks before responses API call`)
-  — last updated 2026-04-14T00:24:43Z (unchanged from run 24), 5 comments, labels: agents, size: XS, 3 👍
+  — updated 2026-04-16T05:26:30Z (**new activity** from 2026-04-14T00:24:43Z in run 25), 5 comments, labels: agents, size: XS, 3 👍
 
 ---
 
 ## PRs Requiring Human Attention
 
-| PR | Issue | Priority | Update (run 25) |
+| PR | Issue | Priority | Update (run 26) |
 | --- | --- | --- | --- |
-| openclaw/openclaw#45584 | Upstream rebase required (dirty with `openclaw/openclaw:main`) | High | Still blocked; upstream not reachable. Now 11+ days stale. |
+| openclaw/openclaw#45584 | Upstream rebase required (dirty with `openclaw/openclaw:main`) | High | Still blocked; upstream not reachable. 11+ days stale, no new activity. |
 | openclaw/openclaw#45584 | Remove monitoring artifact tip commit `46e2b30607` before merge | Medium | Unchanged |
 | openclaw/openclaw#45584 | Re-trigger CI after rebase | Medium | Blocked on rebase |
 | openclaw/openclaw#54730 | CI failures (security-fast, contracts-protocol, ext shards 2/3/4/6) — likely pre-existing | Medium | Unchanged — assessed as pre-existing (run 20) |
 | openclaw/openclaw#54730 | Remove monitoring artifact tip commits `f052129db4` + `d18c8771bb` before merge | Medium | Unchanged |
-| openclaw/openclaw#54730 | Needs human maintainer review (none yet; 9+ days stale) | Medium | Unchanged |
+| openclaw/openclaw#54730 | Needs human maintainer review (none yet; 10+ days stale) | Medium | Unchanged |
 
 ---
 
