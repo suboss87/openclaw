@@ -1,6 +1,6 @@
 # PR Monitor Report
 
-**Date:** 2026-04-22 (run 33)
+**Date:** 2026-04-22 (run 34)
 **Contributor:** suboss87
 **Repo:** openclaw/openclaw
 
@@ -15,7 +15,7 @@
 | #54363 | fix/chat-send-button-contrast           | CLOSED without merge (2026-03-27) | N/A | N/A | N/A | None (closed without merge) |
 | #54730 | fix/subagent-identity-fallback          | CLOSED without merge (2026-04-17) | N/A | N/A | N/A | None (closed by maintainer) |
 
-No change to any of the four originally monitored PRs since run 32.
+No change to any of the four originally monitored PRs since run 33.
 
 ---
 
@@ -43,7 +43,7 @@ No change to any of the four originally monitored PRs since run 32.
 
 ---
 
-## Actions Taken This Run (run 33 — 2026-04-22)
+## Actions Taken This Run (run 34 — 2026-04-22)
 
 **GitHub API access:** Partial — MCP restricted to `suboss87/openclaw` (fork only); `gh` CLI
 not installed; PR comment/review bodies for `openclaw/openclaw` are inaccessible via MCP.
@@ -54,14 +54,12 @@ not installed; PR comment/review bodies for `openclaw/openclaw` are inaccessible
 
 ---
 
-## Notable Activity Since Run 32 (2026-04-22)
+## Notable Activity Since Run 33 (2026-04-22)
 
-No new activity. All four open PRs are unchanged:
+**#69685 has a new comment** — comment count went from 2 → 3; last updated 2026-04-22T14:13:52Z.
+Comment body is inaccessible due to MCP scope restriction; human review required.
 
-- #69685: 2 comments, last updated 2026-04-21T11:04:21Z (unchanged)
-- #68446: 2 comments, last updated 2026-04-18T07:19:26Z (unchanged)
-- #66544: 3 comments, last updated 2026-04-19T00:33:48Z (unchanged)
-- #66225: 5 comments, last updated 2026-04-19T00:34:20Z (unchanged)
+No other open PRs saw new activity.
 
 ---
 
@@ -69,7 +67,7 @@ No new activity. All four open PRs are unchanged:
 
 | PR | Title | Labels | Updated | Comments | Reactions |
 | --- | --- | --- | --- | --- | --- |
-| #69685 | fix(agents): strip final tags from persisted assistant message | agents, size: M | 2026-04-21T11:04:21Z | 2 | 👍×1 |
+| #69685 | fix(agents): strip final tags from persisted assistant message | agents, size: M | 2026-04-22T14:13:52Z | 3 ⬆️ | 👍×1 |
 | #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | channel: whatsapp-web, size: XS | 2026-04-18T07:19:26Z | 2 | 👍×1 |
 | #66544 | fix(gateway): exclude heartbeat sender ID from session display name | gateway, size: XS | 2026-04-19T00:33:48Z | 3 | 👍×1 |
 | #66225 | fix(agents): align final tag regexes to handle self-closing `<final/>` variant | agents, size: S | 2026-04-19T00:34:20Z | 5 | 👍×1 |
@@ -78,11 +76,12 @@ No new activity. All four open PRs are unchanged:
 
 ## PRs Requiring Human Attention
 
-1. **#69685** — Opened 2026-04-21; companion to #66225. 2 comments (review thread content
-   inaccessible due to MCP scope limit). Check for any early review feedback.
+1. **#69685** — NEW COMMENT since run 33 (now 3 comments as of 2026-04-22T14:13:52Z).
+   Companion to #66225. Comment body inaccessible due to MCP scope restriction — check for
+   any new review requests or code change feedback.
    https://github.com/openclaw/openclaw/pull/69685
 
-2. **#66225** — 5 comments as of 2026-04-19T00:34:20Z (unchanged from run 28 through run 33).
+2. **#66225** — 5 comments as of 2026-04-19T00:34:20Z (unchanged from runs 28–34).
    Review thread content inaccessible. Check for outstanding code change requests.
    https://github.com/openclaw/openclaw/pull/66225
 
@@ -97,7 +96,7 @@ no further action needed.
 
 ---
 
-## Branch SHAs (confirmed run 33 vs run 28)
+## Branch SHAs (confirmed run 34 vs run 28)
 
 | Branch                                  | SHA (tip)                                  | Changed since run 28? |
 | --------------------------------------- | ------------------------------------------ | --------------------- |
