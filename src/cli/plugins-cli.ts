@@ -209,12 +209,14 @@ async function runPluginInstallCommand(params: {
   const normalized = fileSpec && fileSpec.ok ? fileSpec.path : raw;
   const resolved = resolveUserPath(normalized);
   const cfg = loadConfig();
+  // Resolve dynamically so --profile overrides take effect before CONFIG_DIR is read.
+  const extensionsDir = path.join(resolveStateDir(process.env, os.homedir), "extensions");
 
   if (fs.existsSync(resolved)) {
     if (opts.link) {
       const existing = cfg.plugins?.load?.paths ?? [];
       const merged = Array.from(new Set([...existing, resolved]));
-      const probe = await installPluginFromPath({ path: resolved, dryRun: true });
+      const probe = await installPluginFromPath({ path: resolved, extensionsDir, dryRun: true });
       if (!probe.ok) {
         defaultRuntime.error(probe.error);
         process.exit(1);
@@ -251,6 +253,7 @@ async function runPluginInstallCommand(params: {
 
     const result = await installPluginFromPath({
       path: resolved,
+      extensionsDir,
       logger: createPluginInstallLogger(),
     });
     if (!result.ok) {
@@ -316,6 +319,7 @@ async function runPluginInstallCommand(params: {
 
   const result = await installPluginFromNpmSpec({
     spec: raw,
+    extensionsDir,
     logger: createPluginInstallLogger(),
   });
   if (!result.ok) {
