@@ -22,6 +22,12 @@ import {
 } from "./pw-session.js";
 import { withPageScopedCdpClient } from "./pw-session.page-cdp.js";
 
+// Playwright 1.59.1 removed the private _snapshotForAI; the public replacement is
+// locator.ariaSnapshot({ mode: 'ai' }), available since Playwright 1.52.
+type LocatorWithAriaAiMode = {
+  ariaSnapshot(options?: { mode?: string; timeout?: number }): Promise<string>;
+};
+
 export async function snapshotAriaViaPlaywright(opts: {
   cdpUrl: string;
   targetId?: string;
@@ -62,16 +68,19 @@ export async function snapshotAiViaPlaywright(opts: {
   });
   ensurePageState(page);
 
+  const timeoutMs = Math.max(500, Math.min(60_000, Math.floor(opts.timeoutMs ?? 5000)));
   const maybe = page as unknown as WithSnapshotForAI;
-  if (!maybe._snapshotForAI) {
-    throw new Error("Playwright _snapshotForAI is not available. Upgrade playwright-core.");
+  let snapshot: string;
+  if (maybe._snapshotForAI) {
+    const result = await maybe._snapshotForAI({ timeout: timeoutMs, track: "response" });
+    snapshot = String(result?.full ?? "");
+  } else {
+    // Playwright 1.59.1+ removed _snapshotForAI; use the public ariaSnapshot({mode:'ai'}).
+    snapshot = await (page.locator(":root") as unknown as LocatorWithAriaAiMode).ariaSnapshot({
+      mode: "ai",
+      timeout: timeoutMs,
+    });
   }
-
-  const result = await maybe._snapshotForAI({
-    timeout: Math.max(500, Math.min(60_000, Math.floor(opts.timeoutMs ?? 5000))),
-    track: "response",
-  });
-  let snapshot = String(result?.full ?? "");
   const maxChars = opts.maxChars;
   const limit =
     typeof maxChars === "number" && Number.isFinite(maxChars) && maxChars > 0
@@ -117,14 +126,18 @@ export async function snapshotRoleViaPlaywright(opts: {
       throw new Error("refs=aria does not support selector/frame snapshots yet.");
     }
     const maybe = page as unknown as WithSnapshotForAI;
-    if (!maybe._snapshotForAI) {
-      throw new Error("refs=aria requires Playwright _snapshotForAI support.");
+    let aiSnapshot: string;
+    if (maybe._snapshotForAI) {
+      const result = await maybe._snapshotForAI({ timeout: 5000, track: "response" });
+      aiSnapshot = String(result?.full ?? "");
+    } else {
+      // Playwright 1.59.1+ removed _snapshotForAI; use the public ariaSnapshot({mode:'ai'}).
+      aiSnapshot = await (page.locator(":root") as unknown as LocatorWithAriaAiMode).ariaSnapshot({
+        mode: "ai",
+        timeout: 5000,
+      });
     }
-    const result = await maybe._snapshotForAI({
-      timeout: 5000,
-      track: "response",
-    });
-    const built = buildRoleSnapshotFromAiSnapshot(String(result?.full ?? ""), opts.options);
+    const built = buildRoleSnapshotFromAiSnapshot(aiSnapshot, opts.options);
     storeRoleRefsForTarget({
       page,
       cdpUrl: opts.cdpUrl,
