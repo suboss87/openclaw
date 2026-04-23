@@ -154,7 +154,11 @@ function resolveDiscordChannelContext(
   let parentName: string | undefined;
   let parentSlug = "";
   if (isThread && channel && "parentId" in channel) {
-    parentId = (channel.parentId as string) ?? undefined;
+    try {
+      parentId = (channel.parentId as string) ?? undefined;
+    } catch {
+      // partial channel - parentId not accessible without fetch
+    }
     if ("parent" in channel) {
       const parent = (channel as { parent?: { name?: string } }).parent;
       if (parent?.name) {

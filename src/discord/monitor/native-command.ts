@@ -443,7 +443,16 @@ async function resolveDiscordModelPickerRoute(params: {
       threadChannel: {
         id: rawChannelId,
         name: "name" in channel ? (channel.name as string | undefined) : undefined,
-        parentId: "parentId" in channel ? (channel.parentId ?? undefined) : undefined,
+        parentId: (() => {
+          if (!("parentId" in channel)) {
+            return undefined;
+          }
+          try {
+            return (channel as { parentId?: string | null }).parentId ?? undefined;
+          } catch {
+            return undefined;
+          }
+        })(),
         parent: undefined,
       },
       channelInfo,
@@ -1368,7 +1377,18 @@ async function dispatchDiscordCommandInteraction(params: {
       threadChannel: {
         id: rawChannelId,
         name: channelName,
-        parentId: "parentId" in channel ? (channel.parentId ?? undefined) : undefined,
+        parentId: (() => {
+          if (!("parentId" in channel)) {
+            return undefined;
+          }
+          try {
+            return (channel as { parentId?: string | null }).parentId ?? undefined;
+          } catch {
+            // channel object is partial (not yet fetched from Discord API);
+            // resolveDiscordThreadParentInfo will fetch thread info to find parentId
+            return undefined;
+          }
+        })(),
         parent: undefined,
       },
       channelInfo,
