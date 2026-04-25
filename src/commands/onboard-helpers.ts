@@ -255,11 +255,11 @@ export async function openUrl(url: string): Promise<boolean> {
     command.push(url);
   }
   try {
-    await runCommandWithTimeout(command, {
+    const result = await runCommandWithTimeout(command, {
       timeoutMs: 5_000,
       windowsVerbatimArguments: quoteUrl,
     });
-    return true;
+    return result.code === 0;
   } catch {
     // ignore; we still print the URL for manual open
     return false;
