@@ -461,6 +461,54 @@ describe("model-selection", () => {
         ref: { provider: "openai", model: "@cf/openai/gpt-oss-20b" },
       });
     });
+
+    it("accepts @ in model ID when the full key is in the allowlist (LM Studio quants)", () => {
+      const cfg: OpenClawConfig = {
+        agents: {
+          defaults: {
+            models: {
+              "lmstudio/qwen3-27b@q4_k_xl": {},
+            },
+          },
+        },
+      } as OpenClawConfig;
+
+      const result = resolveAllowedModelRef({
+        cfg,
+        catalog: [],
+        raw: "lmstudio/qwen3-27b@q4_k_xl",
+        defaultProvider: "anthropic",
+      });
+
+      expect(result).toEqual({
+        key: "lmstudio/qwen3-27b@q4_k_xl",
+        ref: { provider: "lmstudio", model: "qwen3-27b@q4_k_xl" },
+      });
+    });
+
+    it("still strips @ as profile separator when the full key is not in the allowlist", () => {
+      const cfg: OpenClawConfig = {
+        agents: {
+          defaults: {
+            models: {
+              "openai/gpt-5": {},
+            },
+          },
+        },
+      } as OpenClawConfig;
+
+      const result = resolveAllowedModelRef({
+        cfg,
+        catalog: [],
+        raw: "openai/gpt-5@work",
+        defaultProvider: "anthropic",
+      });
+
+      expect(result).toEqual({
+        key: "openai/gpt-5",
+        ref: { provider: "openai", model: "gpt-5" },
+      });
+    });
   });
 
   describe("resolveModelRefFromString", () => {

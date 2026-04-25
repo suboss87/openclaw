@@ -600,6 +600,27 @@ export function resolveAllowedModelRef(params: {
     cfg: params.cfg,
     defaultProvider: params.defaultProvider,
   });
+
+  // Some providers (e.g. LM Studio) embed @ in their model IDs as a quant
+  // specifier (e.g. lmstudio/qwen3-27b@q4_k_xl). Try the full raw string as a
+  // model ID first; only fall through to the profile-split path if the full key
+  // isn't in the configured allowlist.
+  if (trimmed.includes("@")) {
+    const rawRef = parseModelRef(trimmed, params.defaultProvider);
+    if (rawRef) {
+      const rawStatus = getModelRefStatus({
+        cfg: params.cfg,
+        catalog: params.catalog,
+        ref: rawRef,
+        defaultProvider: params.defaultProvider,
+        defaultModel: params.defaultModel,
+      });
+      if (rawStatus.allowed) {
+        return { ref: rawRef, key: rawStatus.key };
+      }
+    }
+  }
+
   const resolved = resolveModelRefFromString({
     raw: trimmed,
     defaultProvider: params.defaultProvider,
