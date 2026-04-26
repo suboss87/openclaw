@@ -1,38 +1,43 @@
-# midday check - 2026-04-25
+# midday check - 2026-04-26
 
-## open PRs
+## fork PR state (live)
 
-| PR     | title                                                                     | last updated | status             |
-| ------ | ------------------------------------------------------------------------- | ------------ | ------------------ |
-| #66225 | fix(agents): align final tag regexes for `<final/>`                       | 2026-04-23   | waiting for review |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 2026-04-23   | waiting for review |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 2026-04-24   | waiting for review |
-| #69685 | fix(agents): strip final tags from persisted assistant message            | 2026-04-23   | waiting for review |
+| # | title | base age | CI | notes |
+|---|-------|----------|----|-------|
+| #5 | fix(bonjour): suppress CIAO PROBING CANCELLED | 0d (fresh) | queued | opened overnight |
+| #4 | fix: check exit code in openUrl (Windows) | 1d | all skipped (no fork secrets) | clean |
+| #3 | fix(configure): preserve custom primary model | 2d | all skipped | clean |
+| #2 | fix(discord): handle partial GuildThreadChannel | 3d | all skipped | needs upstream PR |
+| #1 | fix(gateway): clean up MCP child processes | 3d | stale base | needs rebase before ping |
 
-MCP is restricted to suboss87/openclaw for writes, so couldn't fetch PR comments via API. No human feedback retrieved this run.
+no human review comments retrieved this run - MCP read/write restricted to suboss87/openclaw only.
+
+## upstream PR state (from yesterday's snapshot)
+
+| # | title | age | status |
+|---|-------|-----|--------|
+| #71636 | fix(config): make ModelProviderSchema.models optional | 2d | awaiting review |
+| #71633 | fix(bonjour): suppress Windows arp-poll console flash | 2d | awaiting review |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback group policy bypass | 9d | awaiting review |
+| #66544 | fix(gateway): exclude heartbeat sender from session display name | 13d | awaiting review |
+| #66225 | fix(agents): align final tag regexes for self-closing final | 13d | awaiting review |
+
+cannot fetch live upstream state - MCP tools restricted to fork, upstream git remote returns 502.
 
 ## bug hunt
 
-Picked #71474 - LM Studio model names with `@` quant specifiers (e.g. `lmstudio/qwen3-27b@q4_k_xl`) get silently truncated. Two symptoms:
-
-- `/model lmstudio/qwen3-27b@q4_k_xl` returns "model not allowed: lmstudio/qwen3-27b"
-- requests to LM Studio use the truncated model ID, causing random quant selection
-
-**root cause:** `splitTrailingAuthProfile` treats the first `@` after the last `/` as an auth-profile separator, stripping `@q4_k_xl` before the allowlist check.
-
-**fix:** `resolveAllowedModelRef` now tries the full raw string as a model key first (via `parseModelRef`, no splitting). If that key is in the configured allowlist, returns it immediately. Falls through to profile-split path otherwise - so `openai/gpt-5@work` with allowlist entry `openai/gpt-5` still works correctly.
-
-Branch pushed: `suboss87:fix/lmstudio-at-model-name` (commit a2c58ef)
-54/54 model-selection tests pass including 2 new regression tests.
-
-**action needed:** open PR against openclaw/openclaw manually via GitHub web UI (MCP write access limited to fork only).
+skipped - upstream git remote unreachable (502 from local proxy), MCP tools restricted to
+suboss87/openclaw, gh CLI not installed. no way to query openclaw/openclaw issues this run.
 
 ## actions this run
 
-- detected #71422 (avatar regression) already covered by competing PR #71464 - skipped
-- detected #71474 (LM Studio @ quants) - zero competing PRs, clear repro, fixed
-- all 4 open PRs unchanged - no fresh human feedback retrieved
+- confirmed all 5 fork PRs still open, no new comments
+- PR #5 CI queued (normal for a PR opened <1hr before this run)
+- PR #1 still on stale base - morning run should rebase before pinging maintainers
+- no fresh upstream issues reachable - bug hunt skipped
 
 ## escalations
 
-none
+- PR #1 is 3 days old, stale base, CI red - needs rebase + maintainer ping at next run
+- PR #66544 + #66225 are 13 days old with no review - consider pinging @steipete or @jacobtomlinson
+- persistent tool constraint: upstream git + MCP write access needed for full workflow
