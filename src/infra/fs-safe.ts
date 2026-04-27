@@ -728,6 +728,22 @@ function normalizePinnedWriteError(error: unknown): Error {
   if (error instanceof SafeOpenError) {
     return error;
   }
+  // Spawn ENOENT means the helper subprocess wasn't found in PATH (typically python3).
+  // Surface the actual command name so users get an actionable message instead of the
+  // misleading "path is not a regular file under root".
+  if (
+    error instanceof Error &&
+    (error as NodeJS.ErrnoException).code === "ENOENT" &&
+    typeof (error as NodeJS.ErrnoException).syscall === "string" &&
+    ((error as NodeJS.ErrnoException).syscall ?? "").startsWith("spawn ")
+  ) {
+    const cmd = ((error as NodeJS.ErrnoException).syscall ?? "").slice("spawn ".length);
+    return new SafeOpenError(
+      "invalid-path",
+      `${cmd || "subprocess"} not found in PATH (required for safe file writes)`,
+      { cause: error },
+    );
+  }
   return new SafeOpenError("invalid-path", "path is not a regular file under root", {
     cause: error instanceof Error ? error : undefined,
   });
