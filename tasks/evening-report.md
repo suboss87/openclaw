@@ -1,4 +1,4 @@
-# evening report - 2026-04-26
+# evening report - 2026-04-27
 
 generated: IST evening / EU EOD / US mid-morning
 
@@ -10,70 +10,73 @@ generated: IST evening / EU EOD / US mid-morning
 |------|-------|
 | merged PRs (suboss87, lifetime) | 5 |
 | gap to 46 | **41** |
-| last merge | #70413 - fix(agents): route /btw (2026-04-23) |
+| last known merge | #70413 - fix(agents): route /btw (2026-04-23) |
 
-no new merges since yesterday. upstream MCP still restricted to fork - stat sourced from midday snapshot.
-
----
-
-## open PR state
-
-| # | title | CI | review | age |
-|---|-------|----|--------|-----|
-| #5 | fix(bonjour): suppress CIAO PROBING CANCELLED | queued | none | <1d |
-| #4 | fix: check exit code in openUrl (Windows) | all skipped | none | ~1.5d |
-| #3 | fix(configure): preserve custom primary model | all skipped | none | ~2d |
-| #2 | fix(discord): handle partial GuildThreadChannel | all skipped | none | **3.3d** |
-| #1 | fix(gateway): clean up MCP child processes | **security-fast FAIL** | none | **3.5d** |
-
-all PRs are fork-side (suboss87/openclaw). upstream PR state unavailable - MCP restricted to fork.
+no new merges confirmed today. upstream MCP still restricted to fork.
+#71636 and #71633 dropped from midday snapshot - likely merged or closed since 2026-04-26.
 
 ---
 
-## CI findings
+## open PR state (upstream openclaw/openclaw)
 
-**PR #1 security-fast FAILURE** - unchanged from yesterday. root cause: stale base
-(`2e8a0b29`, 2026-04-23). diff now covers 300+ files due to base drift. actual fix is
-3 lines in `src/gateway/server-methods/agent.ts`. needs a rebase before pinging.
+| # | title | comments | CI | age | flag |
+|---|-------|----------|----|-----|------|
+| #72570 | fix(agents): stop duplicating subagent task in system prompt | 3 | unknown | <1d | 3 comments within 30 min of opening - check manually |
+| #66225 | fix(agents): align final tag regexes for `<final/>` variant | 7 (+2 today) | unknown | 14d | **2 new comments 07:38 UTC - urgent, may be a change request** |
+| #68446 | fix(whatsapp): DM allowFrom fallback group policy bypass | 5 | unknown | 10d | no new activity since 2026-04-25 |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session name | 5 | unknown | 14d | no new activity since 2026-04-25 |
 
-**PRs #2-#4 skipped** - fork lacks CI secrets for the full check suite. not caused by our changes.
-
-**PR #5 queued** - opened overnight 2026-04-26T01:47Z, some jobs still pending. no failures visible.
+note: upstream PR comment content unreadable this run (MCP scope limited to fork).
+#69685 was closed not-merged on 2026-04-25.
 
 ---
 
-## unanswered comments
+## fork staging PRs (suboss87/openclaw)
 
-PR #4 has a comment from `xinhanliu0216-droid` (2026-04-25T14:19Z, author_association: NONE)
-promoting their own cross-platform fork as an alternative. not a maintainer. no reply sent.
-worth closing as duplicate if it escalates.
+| # | branch | CI | age |
+|---|--------|----|-----|
+| #5 | fix/bonjour-ciao-probing-cancelled | skipped | 1d |
+| #4 | fix/windows-openurl-exit-code | skipped | 2d |
+| #3 | fix/configure-preserves-custom-primary-model | skipped | 3d |
+| #2 | fix/discord-thread-slash-command-partial-channel | skipped | 4d |
+| #1 | fix/mcp-nested-run-cleanup | **security-fast FAIL** | 4d |
+
+CI on fork skips most checks (secrets not configured). PR #1's failure is pre-existing and
+stale-base related - rebase needed before ping.
 
 ---
 
 ## maintainer pings sent this run
 
-**none** - blocked. PRs #1 and #2 both cross the 3-day threshold today but upstream
-openclaw/openclaw is outside MCP scope and git remote returns 502. the corresponding
-upstream PRs (#66544, #66225, #68446, #71633, #71636) can't be reached for comment history
-check or ping.
+**none** - blocked again. upstream openclaw/openclaw outside MCP scope.
+pings overdue for: #66544 (14d, gateway), #66225 (14d, agents), #68446 (10d, whatsapp/channels).
 
-if upstream access is restored, send:
-- gateway/agents PRs: @steipete or @jacobtomlinson
-- discord/channels PRs: @obviyus or @vincentkoc
+pending from yesterday's queue still not sent:
+- #66544 + #66225: @steipete or @jacobtomlinson
+- #68446: @obviyus or @vincentkoc
+
+---
+
+## unanswered comments
+
+PR #4 (fork): community comment from `xinhanliu0216-droid` (2026-04-25T14:19Z, NONE association)
+promoting their own fork. not a maintainer, outside 12h window. no reply sent.
+
+#66225 and #72570 had new activity today but content unreadable. check manually before tomorrow morning run.
 
 ---
 
 ## rebases needed tomorrow (morning run)
 
-- **PR #1** priority - rebase `fix/mcp-nested-run-cleanup` onto current main, push to fork,
-  verify security-fast passes, then ping gateway maintainer
-- **PR #2** check base drift - 3.3d old, 1 commit, verify no conflicts before ping
+- **PR #1** (fix/mcp-nested-run-cleanup) - rebase onto current main, verify security-fast, then ping
 
 ---
 
 ## top priority bug for tomorrow morning autopilot
 
-**PR #2 discord thread slash command crash** (issue #70447) - real user-facing regression.
-any Discord slash command inside a thread hits `Cannot access rawData on partial Channel`
-and kills the interaction. fix is targeted (3 call sites, try/catch), regression test in place,
-CI should be green after rebase. highest merge probability if upstream access is available.
+**#66225 comment content** - 2 fresh comments today on a 14-day-old agents PR could be a
+change request or merge signal. read them first before hunting new bugs. if it's a change request,
+address it immediately - this is the oldest open PR.
+
+secondary: Discord thread slash command crash (#70447, fork PR #2) - still highest-confidence
+unsubmitted fix ready to go upstream.
