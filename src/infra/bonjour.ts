@@ -1,3 +1,4 @@
+import os from "node:os";
 import { logDebug, logWarn } from "../logger.js";
 import { getLogger } from "../logging.js";
 import { ignoreCiaoCancellationRejection } from "./bonjour-ciao.js";
@@ -97,7 +98,7 @@ export async function startGatewayBonjourAdvertiser(
   const hostnameRaw =
     process.env.OPENCLAW_MDNS_HOSTNAME?.trim() ||
     process.env.CLAWDBOT_MDNS_HOSTNAME?.trim() ||
-    "openclaw";
+    os.hostname();
   const hostname =
     hostnameRaw
       .replace(/\.local$/i, "")
