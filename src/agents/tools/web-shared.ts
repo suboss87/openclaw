@@ -92,6 +92,46 @@ export type ReadResponseTextResult = {
   bytesRead: number;
 };
 
+// Extract charset label from a Content-Type value, e.g. "text/html; charset=Shift_JIS" → "Shift_JIS".
+function charsetFromContentType(contentType: string | null): string | null {
+  if (!contentType) {
+    return null;
+  }
+  const m = /;\s*charset\s*=\s*([^\s;]+)/i.exec(contentType);
+  return m?.[1]?.trim() ?? null;
+}
+
+// Scan the first 4 KB of raw bytes for an HTML <meta charset> or http-equiv charset declaration.
+// Decoded as latin1 so no byte is lost; meta tags are ASCII-safe.
+const META_CHARSET_RE = /<meta[^>]+charset\s*=\s*["']?\s*([^\s"';>]+)/i;
+
+function charsetFromHtmlBytes(bytes: Uint8Array): string | null {
+  const sample = new TextDecoder("latin1").decode(bytes.subarray(0, Math.min(bytes.length, 4096)));
+  return META_CHARSET_RE.exec(sample)?.[1]?.trim() ?? null;
+}
+
+// Construct a TextDecoder for the given charset label, falling back to UTF-8 on unknown labels.
+function safeTextDecoder(charset: string | null | undefined): TextDecoder {
+  if (!charset) {
+    return new TextDecoder();
+  }
+  try {
+    return new TextDecoder(charset);
+  } catch {
+    return new TextDecoder();
+  }
+}
+
+function concatUint8Arrays(chunks: Uint8Array[], totalSize: number): Uint8Array {
+  const result = new Uint8Array(totalSize);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
 export async function readResponseText(
   res: Response,
   options?: { maxBytes?: number },
@@ -102,6 +142,10 @@ export async function readResponseText(
       ? Math.floor(maxBytesRaw)
       : undefined;
 
+  const contentType = res.headers?.get("content-type") ?? null;
+  const isHtml = contentType?.toLowerCase().includes("text/html") ?? false;
+  const headerCharset = charsetFromContentType(contentType);
+
   const body = (res as unknown as { body?: unknown }).body;
   if (
     maxBytes &&
@@ -110,11 +154,11 @@ export async function readResponseText(
     "getReader" in body &&
     typeof (body as { getReader: () => unknown }).getReader === "function"
   ) {
+    // Collect raw bytes so we can detect charset from HTML meta before decoding.
     const reader = (body as ReadableStream<Uint8Array>).getReader();
-    const decoder = new TextDecoder();
     let bytesRead = 0;
     let truncated = false;
-    const parts: string[] = [];
+    const rawChunks: Uint8Array[] = [];
 
     try {
       while (true) {
@@ -137,8 +181,8 @@ export async function readResponseText(
           truncated = true;
         }
 
+        rawChunks.push(chunk);
         bytesRead += chunk.byteLength;
-        parts.push(decoder.decode(chunk, { stream: true }));
 
         if (truncated || bytesRead >= maxBytes) {
           truncated = true;
@@ -157,11 +201,32 @@ export async function readResponseText(
       }
     }
 
-    parts.push(decoder.decode());
-    return { text: parts.join(""), truncated, bytesRead };
+    const combined = concatUint8Arrays(rawChunks, bytesRead);
+    let charset = headerCharset;
+    if (!charset && isHtml) {
+      charset = charsetFromHtmlBytes(combined) ?? null;
+    }
+    return { text: safeTextDecoder(charset).decode(combined), truncated, bytesRead };
   }
 
+  // Non-streaming fallback: read as ArrayBuffer for proper charset detection when supported.
   try {
+    const hasArrayBuffer =
+      typeof (res as unknown as { arrayBuffer?: unknown }).arrayBuffer === "function";
+    if (hasArrayBuffer) {
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let charset = headerCharset;
+      if (!charset && isHtml) {
+        charset = charsetFromHtmlBytes(bytes) ?? null;
+      }
+      return {
+        text: safeTextDecoder(charset).decode(bytes),
+        truncated: false,
+        bytesRead: bytes.length,
+      };
+    }
+    // Last-resort fallback for environments that don't expose arrayBuffer() (e.g. some test mocks).
     const text = await res.text();
     return { text, truncated: false, bytesRead: text.length };
   } catch {
