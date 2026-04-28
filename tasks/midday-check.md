@@ -1,33 +1,39 @@
-# midday check - 2026-04-27
+# midday check - 2026-04-28
 
 ## open PR status
 
-| PR     | title                                                                      | comments | last updated       | status                        |
-| ------ | -------------------------------------------------------------------------- | -------- | ------------------ | ----------------------------- |
-| #72570 | fix(agents): stop duplicating subagent task in system prompt               | 3        | 2026-04-27 04:13   | open - comment content unreadable (MCP scope) |
-| #66225 | fix(agents): align final tag regexes for `<final/>` variant               | 7        | 2026-04-27 07:38   | open - 2 new comments today, content unreadable |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass  | 5        | 2026-04-25         | open - no new activity        |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name        | 5        | 2026-04-25         | open - no new activity        |
+| PR     | title                                                                      | comments | last updated          | status                                           |
+| ------ | -------------------------------------------------------------------------- | -------- | --------------------- | ------------------------------------------------ |
+| #73162 | fix(slack): remove socket reconnect attempt cap                            | 3        | 2026-04-28 06:42 UTC  | opened today; 3 comments, content unreadable (MCP scope) |
+| #66225 | fix(agents): align final tag regexes for `<final/>` variant               | 7        | 2026-04-27 10:51 UTC  | open, no new activity today                      |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass  | 5        | 2026-04-25            | open, no new activity                            |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name        | 5        | 2026-04-25            | open, no new activity                            |
 
-#69685 (fix(agents): strip final tags from persisted message) closed 2026-04-25, not merged.
-companion #66225 still open - likely waiting for that to land first.
+#72570 (fix(agents): stop duplicating subagent task in system prompt) no longer in open PR
+list - likely merged or closed since yesterday's run.
 
 ## actions this run
 
-- fork sync skipped: upstream remote unreachable via local proxy (502 on git fetch); origin/main
-  already reflects last known good state from prior runs
-- PR feedback check: #66225 picked up 2 new comments today (5 -> 7, updated 07:38 UTC) and
-  #72570 has 3 comments within 30 min of creation - both active, content unreadable due to MCP
-  scope restriction (suboss87/openclaw only); no actionable human text retrieved
-- bug hunt: 4 fresh bugs filed in the last 12 hours, all already have competing PRs
-  - #72536 (webchat duplicate sends) -> competing PR #72605
-  - #72547 (WhatsApp QR proxy bypass) -> competing PR #72692
-  - #72697 (sticky failover override) -> competing PR #64656
-  - #72450 (web UI logs empty) -> no competing PR but repro too thin (screenshot only) - skip
+- fork sync: upstream remote unreachable via local proxy (502 on git fetch); origin/main
+  already at ec22905 (evening report 2026-04-27), no additional sync needed
+- PR feedback check: #73162 has 3 comments as of 06:42 UTC today - content unreadable due
+  to MCP scope restriction (suboss87/openclaw only); no actionable human text retrieved;
+  manual check advised
+- bug hunt: 7 fresh bugs reviewed from last 12 hours:
+  - #73366 (ollama thinking always false) - strong regression but already taken by PR #73386
+  - #73407 (libsignal GPLv3 concern) - legal/policy question, not a code fix
+  - #73339 (docker cold start 3+ min) - too complex, root cause in bundled runtime mirror internals
+  - #73323 (gateway runtime degradation Windows/Node 24) - too complex, multi-subsystem issue
+  - #73254 (duplicate responses MiniMax) - already tagged r: support, skip
+  - #73211 (mattermost streaming hardcoded) - feature/config gap, not a regression/crash
+  - #73167 (teams inbound stopped 4.9->4.25) - regression class, no competing PR; but fork is
+    a shallow clone and upstream proxy is unreachable so can't bisect the root cause; code reads
+    cleanly with no obvious bug at the extension layer - skip (merge gate not satisfiable)
 - no fix opened this run
 
 ## escalations
 
-- MCP scope still limits comment reads to suboss87/openclaw; can't confirm if #66225's
-  2 new comments include a change request or a merge signal - check manually
-- #72570 had 3 comments within 30 min of opening - worth a manual check for early feedback
+- MCP scope restriction still blocks reading PR comments on upstream repo; #73162 has 3
+  comments from its opening hours - needs a manual eyeball for early reviewer feedback
+- #73167 (teams inbound regression) is worth a deeper look when upstream git access is
+  restored; likely caused by something in core between 4.9 and 4.25, not the extension
