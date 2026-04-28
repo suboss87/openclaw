@@ -44,6 +44,7 @@ import {
   truncateMiddle,
 } from "./bash-tools.shared.js";
 import { assertSandboxPath } from "./sandbox-paths.js";
+import { getActiveSkillEnvKeys } from "./skills/env-overrides.js";
 
 export type { BashSandboxConfig } from "./bash-tools.shared.js";
 export type {
@@ -372,11 +373,31 @@ export function createExecTool(
 
       const mergedEnv = params.env ? { ...baseEnv, ...params.env } : baseEnv;
 
+      // Collect skill-injected env vars so the sandboxed container process can access them.
+      // Gateway/node hosts inherit these via coerceEnv(process.env) → sanitizeHostBaseEnv.
+      const skillEnv: Record<string, string> | undefined = sandbox
+        ? (() => {
+            const keys = getActiveSkillEnvKeys();
+            if (keys.size === 0) {
+              return undefined;
+            }
+            const result: Record<string, string> = {};
+            for (const key of keys) {
+              const value = process.env[key];
+              if (typeof value === "string") {
+                result[key] = value;
+              }
+            }
+            return Object.keys(result).length > 0 ? result : undefined;
+          })()
+        : undefined;
+
       const env = sandbox
         ? buildSandboxEnv({
             defaultPath: DEFAULT_PATH,
             paramsEnv: params.env,
             sandboxEnv: sandbox.env,
+            skillEnv,
             containerWorkdir: containerWorkdir ?? sandbox.containerWorkdir,
           })
         : mergedEnv;

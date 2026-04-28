@@ -18,12 +18,17 @@ export function buildSandboxEnv(params: {
   defaultPath: string;
   paramsEnv?: Record<string, string>;
   sandboxEnv?: Record<string, string>;
+  skillEnv?: Record<string, string>;
   containerWorkdir: string;
 }) {
   const env: Record<string, string> = {
     PATH: params.defaultPath,
     HOME: params.containerWorkdir,
   };
+  // Skill env vars have lowest priority: overrideable by sandbox config and agent params.
+  for (const [key, value] of Object.entries(params.skillEnv ?? {})) {
+    env[key] = value;
+  }
   for (const [key, value] of Object.entries(params.sandboxEnv ?? {})) {
     env[key] = value;
   }
