@@ -1,82 +1,72 @@
-# evening report - 2026-04-27
+# evening report - 2026-04-28
 
 generated: IST evening / EU EOD / US mid-morning
 
 ---
 
-## commit count (upstream main, top-30 tracker)
+## commit count (upstream main, top-46 tracker)
 
 | stat | value |
 |------|-------|
-| merged PRs (suboss87, lifetime) | 5 |
+| merged PRs (lifetime) | 5 |
 | gap to 46 | **41** |
-| last known merge | #70413 - fix(agents): route /btw (2026-04-23) |
+| last merge | #70413 - fix(agents): route /btw (2026-04-23) |
 
-no new merges confirmed today. upstream MCP still restricted to fork.
-#71636 and #71633 dropped from midday snapshot - likely merged or closed since 2026-04-26.
+no new merges since April 23. 8 PRs closed without merge since April 22.
 
 ---
 
 ## open PR state (upstream openclaw/openclaw)
 
-| # | title | comments | CI | age | flag |
-|---|-------|----------|----|-----|------|
-| #72570 | fix(agents): stop duplicating subagent task in system prompt | 3 | unknown | <1d | 3 comments within 30 min of opening - check manually |
-| #66225 | fix(agents): align final tag regexes for `<final/>` variant | 7 (+2 today) | unknown | 14d | **2 new comments 07:38 UTC - urgent, may be a change request** |
-| #68446 | fix(whatsapp): DM allowFrom fallback group policy bypass | 5 | unknown | 10d | no new activity since 2026-04-25 |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session name | 5 | unknown | 14d | no new activity since 2026-04-25 |
+| # | title | age | last activity | notes |
+|---|-------|-----|---------------|-------|
+| [#73162](https://github.com/openclaw/openclaw/pull/73162) | fix(slack): remove socket reconnect attempt cap | 0d | today | fresh, CI pending |
+| [#68446](https://github.com/openclaw/openclaw/pull/68446) | fix(whatsapp): stop DM allowFrom fallback | 10d | Apr 25 | 5 comments, no review |
+| [#66544](https://github.com/openclaw/openclaw/pull/66544) | fix(gateway): exclude heartbeat sender ID | 14d | Apr 25 | 5 comments, no review |
+| [#66225](https://github.com/openclaw/openclaw/pull/66225) | fix(agents): align final tag regexes | 14d | **Apr 27** | 7 comments, activity yesterday |
 
-note: upstream PR comment content unreadable this run (MCP scope limited to fork).
-#69685 was closed not-merged on 2026-04-25.
-
----
-
-## fork staging PRs (suboss87/openclaw)
-
-| # | branch | CI | age |
-|---|--------|----|-----|
-| #5 | fix/bonjour-ciao-probing-cancelled | skipped | 1d |
-| #4 | fix/windows-openurl-exit-code | skipped | 2d |
-| #3 | fix/configure-preserves-custom-primary-model | skipped | 3d |
-| #2 | fix/discord-thread-slash-command-partial-channel | skipped | 4d |
-| #1 | fix/mcp-nested-run-cleanup | **security-fast FAIL** | 4d |
-
-CI on fork skips most checks (secrets not configured). PR #1's failure is pre-existing and
-stale-base related - rebase needed before ping.
+CI unknown - MCP check-run access restricted to suboss87/openclaw. #72570 closed Apr 27 (was open this morning).
 
 ---
 
-## maintainer pings sent this run
+## notable closures without merge (since Apr 22)
 
-**none** - blocked again. upstream openclaw/openclaw outside MCP scope.
-pings overdue for: #66544 (14d, gateway), #66225 (14d, agents), #68446 (10d, whatsapp/channels).
+- #72570 agents: stop subagent task duplication (closed Apr 27, 4 comments)
+- #71633 bonjour: windowsHide patch ciao@1.3.6 (closed Apr 27, 4 comments)
+- #71636 config: ModelProviderSchema.models optional (closed Apr 26, 3 comments)
+- #69685 agents: strip final tags from persisted message (closed Apr 25, 5 comments)
+- #71512 control-ui: avatar auth blob URL (closed Apr 25, 4 comments)
+- #71515 config: models optional v2 (closed Apr 25, 2 comments)
+- #71505 bonjour: windowsHide patch ciao@1.3.5 (closed Apr 25, 3 comments)
+- #70480 gateway: MCP cohort teardown on nested run (closed Apr 23, 2 comments)
 
-pending from yesterday's queue still not sent:
-- #66544 + #66225: @steipete or @jacobtomlinson
-- #68446: @obviyus or @vincentkoc
-
----
-
-## unanswered comments
-
-PR #4 (fork): community comment from `xinhanliu0216-droid` (2026-04-25T14:19Z, NONE association)
-promoting their own fork. not a maintainer, outside 12h window. no reply sent.
-
-#66225 and #72570 had new activity today but content unreadable. check manually before tomorrow morning run.
+comment bodies blocked by MCP scope. pnpm patch PRs (#71505, #71633) both closed quickly.
+read threads manually via GitHub web before refiling anything.
 
 ---
 
-## rebases needed tomorrow (morning run)
+## maintainer pings
 
-- **PR #1** (fix/mcp-nested-run-cleanup) - rebase onto current main, verify security-fast, then ping
+needed but can't send - MCP write restricted to fork only:
+
+- #68446 (10d, whatsapp): @obviyus or @vincentkoc
+- #66544 (14d, gateway): @steipete or @jacobtomlinson
+- #66225 (14d, agents): @steipete or @jacobtomlinson (check thread first - activity Apr 27)
+
+post manually via GitHub web, or extend MCP scope to openclaw/openclaw to unblock.
 
 ---
 
-## top priority bug for tomorrow morning autopilot
+## rebases needed tomorrow
 
-**#66225 comment content** - 2 fresh comments today on a 14-day-old agents PR could be a
-change request or merge signal. read them first before hunting new bugs. if it's a change request,
-address it immediately - this is the oldest open PR.
+- #66225 and #66544: 14d on base, drift likely - rebase before pinging
+- #68446: 10d on base - verify
+- #73162: filed today, no rebase needed
 
-secondary: Discord thread slash command crash (#70447, fork PR #2) - still highest-confidence
-unsubmitted fix ready to go upstream.
+---
+
+## top priority for tomorrow morning autopilot
+
+#66225 had 2 new comments yesterday (Apr 27, updated 10:51 UTC) - likely a change request.
+read thread via GitHub web first. #69685 (companion) was closed Apr 25 - may have the same
+feedback. address any change request on #66225 before hunting new bugs.
