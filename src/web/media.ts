@@ -451,6 +451,7 @@ export async function optimizeImageToJpeg(
     quality: number;
   } | null = null;
 
+  let lastResizeErr: unknown;
   for (const side of sides) {
     for (const quality of qualities) {
       try {
@@ -472,7 +473,8 @@ export async function optimizeImageToJpeg(
             quality,
           };
         }
-      } catch {
+      } catch (err) {
+        lastResizeErr = err;
         // Continue trying other size/quality combinations
       }
     }
@@ -487,7 +489,17 @@ export async function optimizeImageToJpeg(
     };
   }
 
-  throw new Error("Failed to optimize image");
+  const cause = lastResizeErr instanceof Error ? lastResizeErr : undefined;
+  const detail =
+    lastResizeErr instanceof Error
+      ? lastResizeErr.message
+      : typeof lastResizeErr === "string"
+        ? lastResizeErr
+        : "";
+  throw new Error(
+    detail ? `Failed to optimize image: ${detail}` : "Failed to optimize image",
+    cause ? { cause } : undefined,
+  );
 }
 
 export { optimizeImageToPng };

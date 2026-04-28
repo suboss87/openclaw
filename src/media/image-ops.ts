@@ -426,6 +426,7 @@ export async function optimizeImageToPng(
     compressionLevel: number;
   } | null = null;
 
+  let lastResizeErr: unknown;
   for (const side of sides) {
     for (const compressionLevel of compressionLevels) {
       try {
@@ -447,7 +448,8 @@ export async function optimizeImageToPng(
             compressionLevel,
           };
         }
-      } catch {
+      } catch (err) {
+        lastResizeErr = err;
         // Continue trying other size/compression combinations.
       }
     }
@@ -462,7 +464,17 @@ export async function optimizeImageToPng(
     };
   }
 
-  throw new Error("Failed to optimize PNG image");
+  const cause = lastResizeErr instanceof Error ? lastResizeErr : undefined;
+  const detail =
+    lastResizeErr instanceof Error
+      ? lastResizeErr.message
+      : typeof lastResizeErr === "string"
+        ? lastResizeErr
+        : "";
+  throw new Error(
+    detail ? `Failed to optimize PNG image: ${detail}` : "Failed to optimize PNG image",
+    cause ? { cause } : undefined,
+  );
 }
 
 /**
