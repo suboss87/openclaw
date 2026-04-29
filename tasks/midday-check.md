@@ -1,39 +1,49 @@
-# midday check - 2026-04-28
+# midday check - 2026-04-29
 
 ## open PR status
 
-| PR     | title                                                                      | comments | last updated          | status                                           |
-| ------ | -------------------------------------------------------------------------- | -------- | --------------------- | ------------------------------------------------ |
-| #73162 | fix(slack): remove socket reconnect attempt cap                            | 3        | 2026-04-28 06:42 UTC  | opened today; 3 comments, content unreadable (MCP scope) |
-| #66225 | fix(agents): align final tag regexes for `<final/>` variant               | 7        | 2026-04-27 10:51 UTC  | open, no new activity today                      |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass  | 5        | 2026-04-25            | open, no new activity                            |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name        | 5        | 2026-04-25            | open, no new activity                            |
-
-#72570 (fix(agents): stop duplicating subagent task in system prompt) no longer in open PR
-list - likely merged or closed since yesterday's run.
+| PR     | title                                                                      | comments | last updated         | status                                                        |
+| ------ | -------------------------------------------------------------------------- | -------- | -------------------- | ------------------------------------------------------------- |
+| #73162 | fix(slack): remove socket reconnect attempt cap                            | 5        | 2026-04-29 07:15 UTC | updated today; comments unreadable (MCP scope), needs eyeball |
+| #66225 | fix(agents): align final tag regexes for `<final/>` variant               | 7        | 2026-04-29 07:50 UTC | updated today; comments unreadable (MCP scope), needs eyeball |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass  | 5        | 2026-04-25           | open, no new activity                                         |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name        | 5        | 2026-04-25           | open, no new activity                                         |
 
 ## actions this run
 
-- fork sync: upstream remote unreachable via local proxy (502 on git fetch); origin/main
-  already at ec22905 (evening report 2026-04-27), no additional sync needed
-- PR feedback check: #73162 has 3 comments as of 06:42 UTC today - content unreadable due
-  to MCP scope restriction (suboss87/openclaw only); no actionable human text retrieved;
-  manual check advised
-- bug hunt: 7 fresh bugs reviewed from last 12 hours:
-  - #73366 (ollama thinking always false) - strong regression but already taken by PR #73386
-  - #73407 (libsignal GPLv3 concern) - legal/policy question, not a code fix
-  - #73339 (docker cold start 3+ min) - too complex, root cause in bundled runtime mirror internals
-  - #73323 (gateway runtime degradation Windows/Node 24) - too complex, multi-subsystem issue
-  - #73254 (duplicate responses MiniMax) - already tagged r: support, skip
-  - #73211 (mattermost streaming hardcoded) - feature/config gap, not a regression/crash
-  - #73167 (teams inbound stopped 4.9->4.25) - regression class, no competing PR; but fork is
-    a shallow clone and upstream proxy is unreachable so can't bisect the root cause; code reads
-    cleanly with no obvious bug at the extension layer - skip (merge gate not satisfiable)
+- fork sync: upstream remote unreachable via proxy; pulled origin/main (was 7 commits
+  behind); local main now at 28512771cf
+- PR feedback: #73162 and #66225 both had activity today but PR comment reads on
+  openclaw/openclaw are blocked by MCP scope restriction - content not retrievable
+- bug hunt: 22 fresh issues reviewed from 2026-04-28 to 2026-04-29; every viable
+  candidate was claimed within hours of filing. summary:
+  - #74066 (cron invalid expr leaks UNAVAILABLE) - 2 competing PRs (#74068, #74193)
+  - #74123 (media:// URI invalid path) - PR #74186
+  - #73876 (moonshot vs moonshotai provider name) - PR #74162
+  - #73956 (control UI duplicate assistant replies) - PR #73962
+  - #74032 (/status inconsistent in Telegram topic) - PR #73583
+  - #74014 (Telegram HTTP_PROXY ignored) - PR #74151
+  - #74019 (lobster llm-task no callable tools) - PR #74139
+  - #73875 (ACP sends unsupported config) - PR #74048
+  - #73910 (Codex ACP missing auth bridge) - PR #73943
+  - #74086 (Telegram Windows regression) - listed in maintainer tracker PR #74163
+  - #74138 (feishu createScopedPairingAccess not a function, beta blocker) - zero PRs;
+    investigated but root cause requires post-2026.4.22 diffs not in fork; blocked
+  - #74212 (openai-codex SSH device code shows placeholder not real code) - zero PRs;
+    requires @mariozechner/pi-ai/oauth internals; node_modules not installed; blocked
+  - remaining issues: platform-specific (arm64 Discord CPU wedge, Windows/WSL timing
+    issues) or too vague to fix without repro
 - no fix opened this run
 
 ## escalations
 
-- MCP scope restriction still blocks reading PR comments on upstream repo; #73162 has 3
-  comments from its opening hours - needs a manual eyeball for early reviewer feedback
-- #73167 (teams inbound regression) is worth a deeper look when upstream git access is
-  restored; likely caused by something in core between 4.9 and 4.25, not the extension
+- #73162 and #66225 have human activity today but PR comment reads are MCP-blocked;
+  these need a manual check for any reviewer questions
+- #74138 (feishu beta blocker): zero competing PRs; if someone wants to claim it, the
+  error is `createScopedPairingAccess is not a function` in feishu/src/bot.ts at the
+  dispatch path - the export is present in current main but was likely dropped or
+  re-arranged in the 2026.4.24-4.26 window; checking the built dist/plugin-sdk/feishu.js
+  in the 2026.4.26 npm tarball would confirm
+- #74212 (codex SSH device code): zero PRs; the fix is in src/commands/oauth-flow.ts or
+  openai-codex-oauth.ts - when isRemote=true and the pi-ai device-code onPrompt fires,
+  the code should be printed to stdout directly rather than passed as placeholder text
