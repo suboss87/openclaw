@@ -1,6 +1,6 @@
 import type { ErrorObject } from "ajv";
 import { describe, expect, it } from "vitest";
-import { formatValidationErrors, validateTalkConfigResult } from "./index.js";
+import { formatValidationErrors, validateAgentParams, validateTalkConfigResult } from "./index.js";
 
 const makeError = (overrides: Partial<ErrorObject>): ErrorObject => ({
   keyword: "type",
@@ -60,6 +60,28 @@ describe("formatValidationErrors", () => {
     expect(formatValidationErrors([err, err])).toBe(
       "at /auth: must have required property 'token'",
     );
+  });
+});
+
+describe("validateAgentParams", () => {
+  it("accepts a paperclip property for Paperclip agent integration", () => {
+    expect(
+      validateAgentParams({
+        message: "hello",
+        idempotencyKey: "test-key-1",
+        paperclip: { runId: "run_123", workspaceId: "ws_456" },
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects unknown extra properties other than paperclip", () => {
+    expect(
+      validateAgentParams({
+        message: "hello",
+        idempotencyKey: "test-key-2",
+        unknownField: "should fail",
+      }),
+    ).toBe(false);
   });
 });
 
