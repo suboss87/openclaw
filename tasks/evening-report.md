@@ -1,4 +1,4 @@
-# evening report - 2026-04-29
+# evening report - 2026-04-30
 
 generated: IST evening / EU EOD / US mid-morning
 
@@ -12,27 +12,39 @@ generated: IST evening / EU EOD / US mid-morning
 | gap to 46 | **41** |
 | last merge | #70413 - fix(agents): route /btw (2026-04-23) |
 
-no new merges today. upstream read blocked (MCP scoped to fork only; no gh CLI).
+no new upstream merges today. upstream read blocked (MCP scoped to fork only).
+**big output day: 5 new PRs filed today** (#11-#15). total open: 14.
 
 ---
 
-## open PR state (upstream openclaw/openclaw)
+## open PR state (fork proxy - upstream #s unknown, MCP blocked)
 
-| # | title | age | last activity | notes |
-|---|-------|-----|---------------|-------|
-| [#73162](https://github.com/openclaw/openclaw/pull/73162) | fix(slack): remove socket reconnect attempt cap | 1d | today 07:15 UTC | 5 comments - **MCP-blocked, read manually** |
-| [#66225](https://github.com/openclaw/openclaw/pull/66225) | fix(agents): align final tag regexes | 14d | today 07:50 UTC | 7 comments - **MCP-blocked, read manually** |
-| [#68446](https://github.com/openclaw/openclaw/pull/68446) | fix(whatsapp): stop DM allowFrom fallback | 10d | Apr 25 | 5 comments, no new activity |
-| [#66544](https://github.com/openclaw/openclaw/pull/66544) | fix(gateway): exclude heartbeat sender ID | 14d | Apr 25 | 5 comments, no new activity |
+| fork # | title (short) | age | CI | review |
+|--------|---------------|-----|----|--------|
+| #1 | fix(gateway): MCP cleanup nested lane runs | 7d | FAIL (security-fast) | none |
+| #2 | fix(discord): partial GuildThreadChannel parentId | 7d | skipped | none |
+| #3 | fix(configure): preserve primary model on reconfig | 6d | skipped | none |
+| #4 | fix: openUrl exit code Windows | 5d | skipped | none |
+| #5 | fix(bonjour): PROBING CANCELLED suppression | 4d | skipped | none |
+| #6 | fix(image): surface error on optimization fail | 2d | skipped | none |
+| #7 | fix(cron): re-arm timer on unexpected rejection | 2d | skipped | none |
+| #8 | fix(web-fetch): charset from Content-Type/meta | 2d | skipped | none |
+| #9 | fix(exec): skill env vars into Docker sandbox | 2d | skipped | none |
+| #11 | fix(cron): mirror synthesized text to transcript | 0d | queued | none |
+| #12 | fix(gateway): Paperclip metadata through AJV | 0d | queued | none |
+| #13 | fix(cron): reject invalid cron on disabled jobs | 0d | queued | none |
+| #14 | fix(exec): bashElevated in gateway agent path | 0d | queued | none |
+| #15 | fix(discord): READY race before lifecycle listener | 0d | queued | none |
 
 ---
 
 ## CI health
 
-- fork PR #1 (`fix/mcp-nested-run-cleanup`): `security-fast` FAILURE - persistent since
-  Apr 23. base is `2e8a0b2` (6d stale). all other 208 checks pass. rebase will fix.
-- fork PRs #2-#9: fork lacks CI secrets; only labeling workflows fire (skipped/cancelled).
-  not caused by our code.
+- **PR #1** `security-fast` FAILURE (7d persistent) - not caused by our 4-line fix.
+  fork main is stale (missing all upstream code), so the diff spans 14,382 files.
+  scanner swept the whole upstream codebase. rebase onto upstream will fix.
+- **PRs #2-#9**: fork lacks CI secrets; only labeling workflows fire (skipped/cancelled). not our code.
+- **PRs #11-#15**: checks queued (filed hours ago), no failures yet.
 
 ---
 
@@ -40,44 +52,47 @@ no new merges today. upstream read blocked (MCP scoped to fork only; no gh CLI).
 
 upstream write blocked (MCP locked to fork). overdue pings for manual send via GitHub web:
 
-- #66225 (14d, agents) + #73162 (1d, slack): check threads first - both had activity today.
-  if no change request is pending, ping @steipete or @jacobtomlinson on #66225.
-- #68446 (10d, whatsapp): @obviyus or @vincentkoc - no activity since Apr 25, safe to ping.
-- #66544 (14d, gateway): @steipete or @jacobtomlinson - no activity since Apr 25, safe to ping.
+- **#66225** (now 15d, agents/hooks): ping @steipete or @jacobtomlinson - check for change requests first.
+- **#66544** (now 15d, gateway): ping @steipete or @jacobtomlinson - no activity since Apr 25.
+- **#68446** (now 11d, whatsapp): ping @obviyus or @vincentkoc - no activity since Apr 25.
+- **#73162** (2d, slack): had activity yesterday - read thread via GitHub web before pinging.
+
+fork PR #4 has 1 comment (xinhanliu0216-droid, NONE association, Apr 25) - self-promotion link to their repo. no reply needed.
 
 ---
 
 ## unanswered human comments
 
-#73162 and #66225 both updated today but comment bodies are unreadable (MCP scope).
-**check both via GitHub web before morning run.** change requests likely on #66225 (14d, 7 comments).
+#73162 and #66225 both may have updated threads - unreadable from here.
+check both via GitHub web before morning run. change request likely still pending on #66225.
 
 ---
 
 ## merges in last 24h
 
-none. last merge was 6 days ago (#70413, Apr 23).
+none. last merge was 7 days ago (#70413, Apr 23).
 
 ---
 
 ## rebases needed tomorrow (morning run)
 
-| fork PR | branch | base age | priority |
-|---------|--------|----------|----------|
-| #1 | fix/mcp-nested-run-cleanup | 6d | high - security-fast CI blocked |
-| #2 | fix/discord-thread-slash-command-partial-channel | 6d | high - real user regression |
-| #3 | fix/configure-preserves-custom-primary-model | 5d | medium |
-| #4 | fix/windows-openurl-exit-code | 4d | medium |
-| #5 | fix/bonjour-ciao-probing-cancelled | 3d | low |
+| fork PR | area | age | priority |
+|---------|------|-----|----------|
+| #1 | gateway/MCP | 7d | HIGH - CI blocked, security-fast red |
+| #2 | discord | 7d | HIGH - user regression |
+| #3 | configure/auth | 6d | medium |
+| #4 | onboard/Windows | 5d | medium |
+| #5 | infra/bonjour | 4d | low |
+| #6-#9 | image/cron/web/exec | 2d | low - approaching 3d threshold |
 
-upstream PRs #66225 + #66544 also need rebase (14d drift) - do after reading threads.
+do NOT rebase #11-#15 yet - filed today, let CI finish first.
 
 ---
 
 ## top priority bug for tomorrow morning autopilot
 
-**#74138 - feishu: `createScopedPairingAccess is not a function`** (beta blocker, zero PRs)
-- error is in `extensions/feishu/src/bot.ts` at the dispatch path
-- function was present in current main but likely dropped in the 2026.4.24-4.26 window
-- verify by diffing the feishu plugin-sdk export list against the last known good commit
-- quick win: no competing PRs, clear error, mid-size extension file
+**#74138 - feishu: `createScopedPairingAccess is not a function`** (beta blocker, still zero PRs)
+- error in `extensions/feishu/src/bot.ts` at dispatch path
+- function dropped sometime in the 2026.4.24-4.26 window
+- verify by diffing feishu plugin-sdk export list against last known good commit
+- quick win: no competing PRs, clear error, contained extension file
