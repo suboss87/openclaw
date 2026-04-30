@@ -133,6 +133,7 @@ describe("runDiscordGatewayLifecycle", () => {
       sequence?: number | null;
     };
     sequence?: number | null;
+    wsReadyState?: number;
   }) {
     const emitter = new EventEmitter();
     const gateway = {
@@ -142,6 +143,7 @@ describe("runDiscordGatewayLifecycle", () => {
       connect: vi.fn(),
       ...(params?.state ? { state: params.state } : {}),
       ...(params?.sequence !== undefined ? { sequence: params.sequence } : {}),
+      ...(params?.wsReadyState !== undefined ? { ws: { readyState: params.wsReadyState } } : {}),
       emitter,
     };
     return { emitter, gateway };
@@ -445,5 +447,84 @@ describe("runDiscordGatewayLifecycle", () => {
     // guarded by !lifecycleStopping to avoid contradicting the abort.
     const connectedTrue = statusUpdates.find((s) => s.connected === true);
     expect(connectedTrue).toBeUndefined();
+  });
+
+  it("detects READY when WebSocket opened before debug listener registered (startup race)", async () => {
+    vi.useFakeTimers();
+    try {
+      const { runDiscordGatewayLifecycle } = await import("./provider.lifecycle.js");
+      // Simulate the race: WebSocket is already OPEN (readyState=1) but isConnected is
+      // still false because READY has not been received yet. The "WebSocket connection
+      // opened" debug event was emitted before our listener was registered.
+      const { emitter, gateway } = createGatewayHarness({ wsReadyState: 1 });
+      getDiscordGatewayEmitterMock.mockReturnValueOnce(emitter);
+
+      let resolveWait: (() => void) | undefined;
+      waitForDiscordGatewayStopMock.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWait = resolve;
+          }),
+      );
+
+      const { lifecycleParams, statusSink } = createLifecycleHarness({ gateway });
+      const lifecyclePromise = runDiscordGatewayLifecycle(lifecycleParams);
+      lifecyclePromise.catch(() => {});
+
+      // No "WebSocket connection opened" emitted — lifecycle must detect via startup poll.
+      // Simulate READY arriving after the lifecycle started.
+      gateway.isConnected = true;
+      await vi.advanceTimersByTimeAsync(500); // > 250ms poll interval
+
+      const connectedCall = statusSink.mock.calls.find((call) => {
+        const patch = (call[0] ?? {}) as Record<string, unknown>;
+        return patch.connected === true;
+      });
+      expect(connectedCall).toBeDefined();
+      expect(connectedCall![0]).toMatchObject({ connected: true, lastDisconnect: null });
+
+      resolveWait?.();
+      await expect(lifecyclePromise).resolves.toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not start hello poll at startup when WebSocket is not open", async () => {
+    vi.useFakeTimers();
+    try {
+      const { runDiscordGatewayLifecycle } = await import("./provider.lifecycle.js");
+      // ws is absent (not yet connecting) — no poll should start
+      const { emitter, gateway } = createGatewayHarness();
+      getDiscordGatewayEmitterMock.mockReturnValueOnce(emitter);
+
+      let resolveWait: (() => void) | undefined;
+      waitForDiscordGatewayStopMock.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWait = resolve;
+          }),
+      );
+
+      const { lifecycleParams, statusSink } = createLifecycleHarness({ gateway });
+      const lifecyclePromise = runDiscordGatewayLifecycle(lifecycleParams);
+      lifecyclePromise.catch(() => {});
+
+      gateway.isConnected = true;
+      await vi.advanceTimersByTimeAsync(500);
+
+      // Without an open WebSocket at startup, no poll runs — connected status
+      // should NOT be pushed until the "WebSocket connection opened" event fires.
+      const connectedCall = statusSink.mock.calls.find((call) => {
+        const patch = (call[0] ?? {}) as Record<string, unknown>;
+        return patch.connected === true;
+      });
+      expect(connectedCall).toBeUndefined();
+
+      resolveWait?.();
+      await expect(lifecyclePromise).resolves.toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
