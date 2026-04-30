@@ -552,7 +552,11 @@ export function armTimer(state: CronServiceState) {
       state.deps.log.error({ err: String(err) }, "cron: timer tick failed");
       // Re-arm so a rare unexpected rejection (Node.js internals, GC pressure,
       // etc.) does not permanently break the scheduler chain. See #73166.
-      armTimer(state);
+      try {
+        armTimer(state);
+      } catch (rearmErr) {
+        state.deps.log.error({ err: String(rearmErr) }, "cron: failed to re-arm timer after error");
+      }
     });
   }, clampedDelay);
   state.deps.log.debug(
