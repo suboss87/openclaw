@@ -1,4 +1,4 @@
-# OpenClaw Contributor Status - 2026-04-27
+# OpenClaw Contributor Status - 2026-04-30
 
 ## Merged PRs: 5 (gap to 46: ~41)
 
@@ -8,53 +8,43 @@
 - 2026-04-14: #64735 fix(hooks): pass workspaceDir in gateway session reset internal hook context
 - 2026-03-29: #45911 fix(telegram): accept approval callbacks from forwarding target recipients
 
-Note: #71636 (fix(config): make ModelProviderSchema.models optional) was closed without merging
-on 2026-04-26.
+## Open Upstream PRs: 4
 
-## Open Upstream PRs (openclaw/openclaw): 4
+| # | Title | Age | Comments |
+|---|-------|-----|----------|
+| #73162 | fix(slack): remove socket reconnect attempt cap | 2d | 5 |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 12d | 5 |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name | 16d | 5 |
+| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 16d | 7 |
 
-| #      | Title                                                                     | Age | Status          |
-| ------ | ------------------------------------------------------------------------- | --- | --------------- |
-| #71633 | fix(bonjour): suppress Windows arp-poll console flash via windowsHide     | 2d  | Awaiting review |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 9d  | Awaiting review |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 13d | Awaiting review |
-| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 13d | Awaiting review |
+## Fix Branch Ready (needs upstream PR creation)
 
-## Actions Taken This Run (2026-04-27)
+- Branch: `suboss87/openclaw:fix/74635-agent-params-paperclip`
+- Fix: add `paperclip: Type.Optional(Type.Unknown())` to `AgentParamsSchema`
+- Root cause: Paperclip injects a `paperclip` field in gateway agent payloads;
+  `additionalProperties: false` rejected every invocation with
+  "unexpected property 'paperclip'"
+- Files changed: `src/gateway/protocol/schema/agent.ts` (+1 line),
+  `src/gateway/protocol/index.test.ts` (+2 regression tests)
+- Target issue: #74635
+- Status: branch pushed, upstream PR blocked by session MCP restriction
+  (this session can only write to suboss87/openclaw, not openclaw/openclaw)
+  User must open PR manually at:
+  https://github.com/suboss87/openclaw/compare/main...fix/74635-agent-params-paperclip
 
-### New fix: bonjour uses hardcoded "openclaw" hostname (closes #72355)
+## Session Constraints (2026-04-30)
 
-Bug: `src/infra/bonjour.ts` fell back to the string `"openclaw"` when neither
-`OPENCLAW_MDNS_HOSTNAME` nor `CLAWDBOT_MDNS_HOSTNAME` is set. On any machine whose
-hostname is not "openclaw", mDNS probing collides and produces CIAO PROBING CANCELLED
-crash loops. Fix: use `os.hostname()` as the fallback, matching the pattern already used
-in `widearea-dns.ts`. Updated the test that was asserting the buggy behavior.
-Branch: `fix/bonjour-use-system-hostname` pushed to fork. PR creation blocked by MCP
-restrictions.
+- MCP write access restricted to suboss87/openclaw
+- Cannot create PRs in openclaw/openclaw
+- Cannot read PR comments from upstream PRs
+- Git fetch from upstream blocked (502 proxy error)
+- All previous PRs created in sessions with broader MCP access
 
-### New fix: fs-safe surfaces spawn ENOENT instead of misleading path error (closes #72362)
+## Actions This Run
 
-Bug: `normalizePinnedWriteError` in `src/infra/fs-safe.ts` wrapped all non-SafeOpenError
-failures as "path is not a regular file under root", including spawn ENOENT when python3
-is missing from PATH (common in slim Docker images). Users spent hours debugging a path
-error that was actually a missing interpreter. Fix: detect `code === ENOENT` + `syscall`
-starting with `"spawn "` and surface the actual command name with "not found in PATH".
-Added regression test `fs-safe.spawn-error.test.ts` (2/2 pass).
-Branch: `fix/fs-safe-surface-spawn-enoent` pushed to fork. PR creation blocked by MCP
-restrictions.
-
-## Tool constraints (persistent)
-
-MCP tools are restricted to `suboss87/openclaw`. Cannot create PRs or read PR comments
-on `openclaw/openclaw`. `gh` CLI not installed. No direct GitHub API access.
-`git fetch upstream` blocked (proxy auth). Must open upstream PRs manually.
-
-## Pending upstream PR opens (branches on fork)
-
-- `fix/bonjour-use-system-hostname` - closes #72355 (crash loop, filed 2026-04-26)
-- `fix/fs-safe-surface-spawn-enoent` - closes #72362 (misleading Docker error, filed 2026-04-26)
-- `fix/bonjour-ciao-probing-cancelled` - closes #71869 (crash, filed 2026-04-26)
-- `fix/windows-openurl-exit-code` - closes #71098
-- `fix/configure-preserves-custom-primary-model` - closes #70696
-- `fix/mcp-nested-run-cleanup` - closes #70364
-- `fix/discord-thread-slash-command-partial-channel` - closes #70447
+1. Confirmed 5 merged PRs, 4 open upstream PRs
+2. Scanned ~50 new bugs filed 2026-04-29
+3. Found #74635 (Paperclip heartbeat rejected) with no competing PRs
+4. Implemented fix: 1-line schema change + 2 regression tests
+5. Pushed fix branch to fork
+6. Upstream PR blocked by session permissions - branch ready for manual PR
