@@ -372,4 +372,37 @@ describe("dispatchCronDelivery — double-announce guard", () => {
       vi.unstubAllEnvs();
     }
   });
+
+  it("passes mirror param with agentSessionKey and synthesizedText so transcript is updated", async () => {
+    vi.mocked(countActiveDescendantRuns).mockReturnValue(0);
+    vi.mocked(isLikelyInterimCronMessage).mockReturnValue(false);
+    vi.mocked(deliverOutboundPayloads).mockResolvedValue([{ ok: true } as never]);
+
+    const params = makeBaseParams({ synthesizedText: "Today's summary is ready." });
+    const state = await dispatchCronDelivery(params);
+
+    expect(state.delivered).toBe(true);
+    expect(deliverOutboundPayloads).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mirror: {
+          sessionKey: "agent:main",
+          agentId: "main",
+          text: "Today's summary is ready.",
+        },
+      }),
+    );
+  });
+
+  it("skips delivery entirely when synthesizedText is empty (no spurious transcript write)", async () => {
+    vi.mocked(countActiveDescendantRuns).mockReturnValue(0);
+    vi.mocked(isLikelyInterimCronMessage).mockReturnValue(false);
+
+    const params = makeBaseParams({ synthesizedText: "" });
+    const state = await dispatchCronDelivery(params);
+
+    // Empty synthesizedText → payloadsForDelivery is [] → delivery is never attempted.
+    // mirror is only relevant when there is something to deliver.
+    expect(deliverOutboundPayloads).not.toHaveBeenCalled();
+    expect(state.deliveryAttempted).toBe(false);
+  });
 });

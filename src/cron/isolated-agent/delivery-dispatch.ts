@@ -264,6 +264,15 @@ export async function dispatchCronDelivery(
           // entry that replays on the next restart.
           // See: https://github.com/openclaw/openclaw/issues/40545
           skipQueue: true,
+          // Mirror the delivered text back to the session transcript so the
+          // agent remembers what it sent (fixes #74743).
+          mirror: synthesizedText
+            ? {
+                sessionKey: params.agentSessionKey,
+                agentId: params.agentId,
+                text: synthesizedText,
+              }
+            : undefined,
         });
       const deliveryResults = options?.retryTransient
         ? await retryTransientDirectCronDelivery({
