@@ -97,7 +97,7 @@ function charsetFromContentType(contentType: string | null): string | null {
   if (!contentType) {
     return null;
   }
-  const m = /;\s*charset\s*=\s*([^\s;]+)/i.exec(contentType);
+  const m = /;\s*charset\s*=\s*["']?\s*([^\s"';]+)/i.exec(contentType);
   return m?.[1]?.trim() ?? null;
 }
 

@@ -63,6 +63,12 @@ describe("readResponseText - charset detection", () => {
     expect(result.text).toBe("hello");
   });
 
+  it("decodes Latin-1 body when Content-Type declares quoted charset (charset=\"ISO-8859-1\")", async () => {
+    const res = makeStreamResponse(LATIN1_CAFE, 'text/html; charset="ISO-8859-1"');
+    const result = await readResponseText(res, { maxBytes: 1_000_000 });
+    expect(result.text).toBe("café");
+  });
+
   it("respects maxBytes truncation while still detecting charset from header", async () => {
     const longBody = new Uint8Array(
       Array.from({ length: 20 }, (_, i) => (i < 4 ? (LATIN1_CAFE[i] ?? 0x61) : 0x61)),
