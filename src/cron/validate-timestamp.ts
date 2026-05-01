@@ -1,4 +1,5 @@
 import { parseAbsoluteTimeMs } from "./parse.js";
+import { computeNextRunAtMs } from "./schedule.js";
 import type { CronSchedule } from "./types.js";
 
 const ONE_MINUTE_MS = 60 * 1000;
@@ -62,5 +63,27 @@ export function validateScheduleTimestamp(
     };
   }
 
+  return { ok: true };
+}
+
+/**
+ * Validates that a cron schedule expression parses correctly.
+ * Non-cron schedules always pass. Invalid cron syntax is caught here before
+ * the expression reaches the scheduler, which prevents disabled jobs from
+ * persisting an invalid expression that later blocks re-enable.
+ */
+export function validateCronScheduleExpr(schedule: CronSchedule): TimestampValidationResult {
+  if (schedule.kind !== "cron") {
+    return { ok: true };
+  }
+  try {
+    computeNextRunAtMs(schedule, Date.now());
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      message: `invalid cron expression: ${detail}`,
+    };
+  }
   return { ok: true };
 }
