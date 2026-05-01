@@ -60,6 +60,24 @@ describe("openUrl", () => {
 
     platformSpy.mockRestore();
   });
+
+  it("returns false on win32 when the start command exits with a non-zero code", async () => {
+    vi.stubEnv("VITEST", "");
+    vi.stubEnv("NODE_ENV", "development");
+    const platformSpy = vi.spyOn(process, "platform", "get").mockReturnValue("win32");
+    mocks.runCommandWithTimeout.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "",
+      code: 1,
+      signal: null,
+      killed: false,
+    });
+
+    const ok = await openUrl("http://localhost:18789/");
+    expect(ok).toBe(false);
+
+    platformSpy.mockRestore();
+  });
 });
 
 describe("resolveBrowserOpenCommand", () => {
