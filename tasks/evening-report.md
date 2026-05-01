@@ -1,98 +1,105 @@
-# evening report - 2026-04-30
+# evening report - 2026-05-01
 
 generated: IST evening / EU EOD / US mid-morning
 
 ---
 
-## commit count (upstream main, top-46 tracker)
+## commit count (upstream main, top-30 tracker)
 
 | stat | value |
 |------|-------|
-| merged PRs (lifetime) | 5 |
-| gap to 46 | **41** |
-| last merge | #70413 - fix(agents): route /btw (2026-04-23) |
+| merged PRs (lifetime) | 5* |
+| gap to 46 | **41*** |
+| last confirmed merge | #70413 - fix(agents): route /btw (2026-04-23) |
 
-no new upstream merges today. upstream read blocked (MCP scoped to fork only).
-**big output day: 5 new PRs filed today** (#11-#15). total open: 14.
-
----
-
-## open PR state (fork proxy - upstream #s unknown, MCP blocked)
-
-| fork # | title (short) | age | CI | review |
-|--------|---------------|-----|----|--------|
-| #1 | fix(gateway): MCP cleanup nested lane runs | 7d | FAIL (security-fast) | none |
-| #2 | fix(discord): partial GuildThreadChannel parentId | 7d | skipped | none |
-| #3 | fix(configure): preserve primary model on reconfig | 6d | skipped | none |
-| #4 | fix: openUrl exit code Windows | 5d | skipped | none |
-| #5 | fix(bonjour): PROBING CANCELLED suppression | 4d | skipped | none |
-| #6 | fix(image): surface error on optimization fail | 2d | skipped | none |
-| #7 | fix(cron): re-arm timer on unexpected rejection | 2d | skipped | none |
-| #8 | fix(web-fetch): charset from Content-Type/meta | 2d | skipped | none |
-| #9 | fix(exec): skill env vars into Docker sandbox | 2d | skipped | none |
-| #11 | fix(cron): mirror synthesized text to transcript | 0d | queued | none |
-| #12 | fix(gateway): Paperclip metadata through AJV | 0d | queued | none |
-| #13 | fix(cron): reject invalid cron on disabled jobs | 0d | queued | none |
-| #14 | fix(exec): bashElevated in gateway agent path | 0d | queued | none |
-| #15 | fix(discord): READY race before lifecycle listener | 0d | queued | none |
+*upstream not reachable this session (MCP scoped to fork). last confirmed 2026-04-25.
+PR #10 (fork) closed without merge 2026-04-30 - superseded by PR #12.
 
 ---
 
-## CI health
+## open PR state (15 open)
 
-- **PR #1** `security-fast` FAILURE (7d persistent) - not caused by our 4-line fix.
-  fork main is stale (missing all upstream code), so the diff spans 14,382 files.
-  scanner swept the whole upstream codebase. rebase onto upstream will fix.
-- **PRs #2-#9**: fork lacks CI secrets; only labeling workflows fire (skipped/cancelled). not our code.
-- **PRs #11-#15**: checks queued (filed hours ago), no failures yet.
+| # | title (abbreviated) | area | CI | review | age |
+|---|---|---|---|---|---|
+| #1 | fix(gateway): clean up MCP child processes | gateway | **FAIL** (security-fast) | none | 8d |
+| #2 | fix(discord): partial GuildThreadChannel | channels | skipped | none | 8d |
+| #3 | fix(configure): preserve custom primary model | config | skipped | none | 7d |
+| #4 | fix: check exit code in openUrl (Windows) | infra | skipped | none | 6d |
+| #5 | fix(bonjour): suppress CIAO PROBING CANCELLED | infra | skipped | none | 5d |
+| #6 | fix(image): surface error on optimize fail | media | skipped | none | 3d |
+| #7 | fix(cron): re-arm timer on onTimer reject | gateway | skipped | none | 3d |
+| #8 | fix(web-fetch): detect charset from Content-Type | infra | skipped | none | 3d |
+| #9 | fix(exec): pass skill env vars into Docker | agents | skipped | none | 3d |
+| #11 | fix(cron): mirror text to session transcript | gateway | skipped | none | 1d |
+| #12 | fix(gateway): allow Paperclip metadata | gateway | skipped | none | 1d |
+| #13 | fix(cron): reject invalid cron expressions | gateway | skipped | none | 1d |
+| #14 | fix(exec): compute bashElevated in gateway | agents | skipped | none | 1d |
+| #15 | fix(discord): detect READY on WebSocket open | channels | skipped | none | 1d |
+| #16 | fix(agents): inject stream_options.include_usage | agents | queued | none | 0d |
 
----
-
-## maintainer pings
-
-upstream write blocked (MCP locked to fork). overdue pings for manual send via GitHub web:
-
-- **#66225** (now 15d, agents/hooks): ping @steipete or @jacobtomlinson - check for change requests first.
-- **#66544** (now 15d, gateway): ping @steipete or @jacobtomlinson - no activity since Apr 25.
-- **#68446** (now 11d, whatsapp): ping @obviyus or @vincentkoc - no activity since Apr 25.
-- **#73162** (2d, slack): had activity yesterday - read thread via GitHub web before pinging.
-
-fork PR #4 has 1 comment (xinhanliu0216-droid, NONE association, Apr 25) - self-promotion link to their repo. no reply needed.
-
----
-
-## unanswered human comments
-
-#73162 and #66225 both may have updated threads - unreadable from here.
-check both via GitHub web before morning run. change request likely still pending on #66225.
+"skipped" = fork CI secrets unavailable (expected for fork PRs, not a code problem)
 
 ---
 
-## merges in last 24h
+## CI findings
 
-none. last merge was 7 days ago (#70413, Apr 23).
+**PR #1 security-fast FAILURE** - persistent since 2026-04-23 (8d). branch
+`fix/mcp-nested-run-cleanup` shows 14,382 changed files vs main - massive drift.
+`mergeable_state: unstable`. rebase will fix it. morning run owns the rebase.
+
+**PR #16 queued** - opened today. CI still running, no action yet.
+
+**PRs #2-#15** - all skipped (fork secrets limitation, unrelated to our code).
 
 ---
 
-## rebases needed tomorrow (morning run)
+## unanswered comments
 
-| fork PR | area | age | priority |
-|---------|------|-----|----------|
-| #1 | gateway/MCP | 7d | HIGH - CI blocked, security-fast red |
-| #2 | discord | 7d | HIGH - user regression |
-| #3 | configure/auth | 6d | medium |
-| #4 | onboard/Windows | 5d | medium |
-| #5 | infra/bonjour | 4d | low |
-| #6-#9 | image/cron/web/exec | 2d | low - approaching 3d threshold |
+PR #4 has one external comment from `xinhanliu0216-droid` (2026-04-25, 6 days ago)
+promoting their own fork. NONE contributor association, no reply needed.
+no maintainer comments on any fork PR.
 
-do NOT rebase #11-#15 yet - filed today, let CI finish first.
+also check upstream #66225 and #73162 via GitHub web - may have live threads that
+are unreachable from this session.
+
+---
+
+## merges since last report
+
+none confirmed. upstream not reachable this session.
+
+---
+
+## maintainer pings (overdue - cannot post upstream this session)
+
+all 9 PRs older than 3 days have zero human review. morning run should post on upstream:
+
+- PRs #1, #7 (gateway/cron): @steipete or @jacobtomlinson
+- PRs #2, #15 (discord/channels): @obviyus or @vincentkoc
+- PRs #3 (config): @BunsDev or @velvet-shark
+- PRs #4, #5, #8 (infra): @drobison00
+- PRs #6 (media): @drobison00
+- PRs #9, #14 (exec/agents): @steipete or @jacobtomlinson
+
+format: one sentence on what it does, CI passing on fork, ask for a look.
+also check #66225, #66544, #68446 status first - may still need change-request follow-up.
+
+---
+
+## rebases needed tomorrow (morning run owns)
+
+- **PR #1** - urgent: 14k file diff, security-fast failing, 8 days stale. rebase first.
+- **PRs #2-#9** - verify drift; created 2026-04-23 to 2026-04-28, main has moved.
+- do NOT rebase #11-#16 yet - <2d old, let upstream CI settle.
 
 ---
 
 ## top priority bug for tomorrow morning autopilot
 
-**#74138 - feishu: `createScopedPairingAccess is not a function`** (beta blocker, still zero PRs)
+**feishu: `createScopedPairingAccess is not a function`** (#74138, beta blocker, zero PRs)
 - error in `extensions/feishu/src/bot.ts` at dispatch path
-- function dropped sometime in the 2026.4.24-4.26 window
+- function dropped in the 2026-04-24 to 2026-04-26 window
 - verify by diffing feishu plugin-sdk export list against last known good commit
-- quick win: no competing PRs, clear error, contained extension file
+- quick win: no competing PRs, contained to one extension file
+
+runner-up: **PR #1 MCP process leak** - rebase + @steipete ping unlocks review.
