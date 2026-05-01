@@ -8,12 +8,12 @@
 
 ## PRs Checked
 
-| PR     | Branch                                  | Status | CI  | Review | Conflicts | Actions Taken |
-| ------ | --------------------------------------- | ------ | --- | ------ | --------- | ------------- |
-| #45911 | fix/telegram-approval-callback-fallback | MERGED (2026-03-29) | N/A | N/A | N/A | None (already merged) |
-| #45584 | feat/cron-fresh-session-option          | CLOSED without merge (2026-04-17) | N/A | N/A | N/A | None (closed by maintainer) |
-| #54363 | fix/chat-send-button-contrast           | CLOSED without merge (2026-03-27) | N/A | N/A | N/A | None (closed without merge) |
-| #54730 | fix/subagent-identity-fallback          | CLOSED without merge (2026-04-17) | N/A | N/A | N/A | None (closed by maintainer) |
+| PR     | Branch                                  | Status                            | CI  | Review | Conflicts | Actions Taken               |
+| ------ | --------------------------------------- | --------------------------------- | --- | ------ | --------- | --------------------------- |
+| #45911 | fix/telegram-approval-callback-fallback | MERGED (2026-03-29)               | N/A | N/A    | N/A       | None (already merged)       |
+| #45584 | feat/cron-fresh-session-option          | CLOSED without merge (2026-04-17) | N/A | N/A    | N/A       | None (closed by maintainer) |
+| #54363 | fix/chat-send-button-contrast           | CLOSED without merge (2026-03-27) | N/A | N/A    | N/A       | None (closed without merge) |
+| #54730 | fix/subagent-identity-fallback          | CLOSED without merge (2026-04-17) | N/A | N/A    | N/A       | None (closed by maintainer) |
 
 No change to any of the four originally monitored PRs since run 32.
 
@@ -67,12 +67,12 @@ No new activity. All four open PRs are unchanged:
 
 ## Open PRs by suboss87 (current — 4 total)
 
-| PR | Title | Labels | Updated | Comments | Reactions |
-| --- | --- | --- | --- | --- | --- |
-| #69685 | fix(agents): strip final tags from persisted assistant message | agents, size: M | 2026-04-21T11:04:21Z | 2 | 👍×1 |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | channel: whatsapp-web, size: XS | 2026-04-18T07:19:26Z | 2 | 👍×1 |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name | gateway, size: XS | 2026-04-19T00:33:48Z | 3 | 👍×1 |
-| #66225 | fix(agents): align final tag regexes to handle self-closing `<final/>` variant | agents, size: S | 2026-04-19T00:34:20Z | 5 | 👍×1 |
+| PR     | Title                                                                          | Labels                          | Updated              | Comments | Reactions |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------- | -------------------- | -------- | --------- |
+| #69685 | fix(agents): strip final tags from persisted assistant message                 | agents, size: M                 | 2026-04-21T11:04:21Z | 2        | 👍×1      |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass      | channel: whatsapp-web, size: XS | 2026-04-18T07:19:26Z | 2        | 👍×1      |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name            | gateway, size: XS               | 2026-04-19T00:33:48Z | 3        | 👍×1      |
+| #66225 | fix(agents): align final tag regexes to handle self-closing `<final/>` variant | agents, size: S                 | 2026-04-19T00:34:20Z | 5        | 👍×1      |
 
 ---
 
@@ -101,21 +101,21 @@ no further action needed.
 
 | Branch                                  | SHA (tip)                                  | Changed since run 28? |
 | --------------------------------------- | ------------------------------------------ | --------------------- |
-| fix/telegram-approval-callback-fallback | `14fd49c362b7d84b8fda157967befe2a0ca730f5` | No |
-| feat/cron-fresh-session-option          | `46e2b30607303996c6423abd33ec854c42b57ac3` | No |
-| fix/chat-send-button-contrast           | `76c2ea44d857b9ae68cf056dfc72c8e4d4cfcd64` | No |
-| fix/subagent-identity-fallback          | `f052129db44607fed72a0769dc5de6b919bcd5dc` | No |
+| fix/telegram-approval-callback-fallback | `14fd49c362b7d84b8fda157967befe2a0ca730f5` | No                    |
+| feat/cron-fresh-session-option          | `46e2b30607303996c6423abd33ec854c42b57ac3` | No                    |
+| fix/chat-send-button-contrast           | `76c2ea44d857b9ae68cf056dfc72c8e4d4cfcd64` | No                    |
+| fix/subagent-identity-fallback          | `f052129db44607fed72a0769dc5de6b919bcd5dc` | No                    |
 
 ---
 
 ## Recently Merged by suboss87 (reference)
 
-| PR | Title | Merged |
-| --- | --- | --- |
-| #55787 | fix: strip orphaned OpenAI reasoning blocks before responses API call | 2026-04-19T07:57:03Z (`jalehman`) |
-| #67457 | fix(ollama): strip provider prefix from model ID in chat requests | 2026-04-16T05:45:38Z (`obviyus`) |
+| PR     | Title                                                                        | Merged                              |
+| ------ | ---------------------------------------------------------------------------- | ----------------------------------- |
+| #55787 | fix: strip orphaned OpenAI reasoning blocks before responses API call        | 2026-04-19T07:57:03Z (`jalehman`)   |
+| #67457 | fix(ollama): strip provider prefix from model ID in chat requests            | 2026-04-16T05:45:38Z (`obviyus`)    |
 | #64735 | fix(hooks): pass workspaceDir in gateway session reset internal hook context | 2026-04-14T01:19:07Z (`vincentkoc`) |
-| #45911 | fix(telegram): accept approval callbacks from forwarding target recipients | 2026-03-29T05:15:58Z (`obviyus`) |
+| #45911 | fix(telegram): accept approval callbacks from forwarding target recipients   | 2026-03-29T05:15:58Z (`obviyus`)    |
 
 ---
 
