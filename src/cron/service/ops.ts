@@ -1,6 +1,7 @@
 import { enqueueCommandInLane } from "../../process/command-queue.js";
 import { CommandLane } from "../../process/lanes.js";
 import type { CronJob, CronJobCreate, CronJobPatch } from "../types.js";
+import { validateCronScheduleExpr } from "../validate-timestamp.js";
 import { normalizeCronCreateDeliveryInput } from "./initial-delivery.js";
 import {
   applyJobPatch,
@@ -272,6 +273,14 @@ export async function update(state: CronServiceState, id: string, patch: CronJob
   return await locked(state, async () => {
     warnIfDisabled(state, "update");
     await ensureLoaded(state, { skipRecompute: true });
+    // Validate cron expression before mutating in-memory job state so an
+    // invalid expression never leaves the job in a corrupt enabled state.
+    if (patch.schedule) {
+      const cronExprValidation = validateCronScheduleExpr(patch.schedule);
+      if (!cronExprValidation.ok) {
+        throw new Error(cronExprValidation.message);
+      }
+    }
     const job = findJobOrThrow(state, id);
     const now = state.deps.nowMs();
     applyJobPatch(job, patch, { defaultAgentId: state.deps.defaultAgentId });

@@ -5,7 +5,10 @@ import {
   resolveCronRunLogPath,
 } from "../../cron/run-log.js";
 import type { CronJobCreate, CronJobPatch } from "../../cron/types.js";
-import { validateScheduleTimestamp } from "../../cron/validate-timestamp.js";
+import {
+  validateCronScheduleExpr,
+  validateScheduleTimestamp,
+} from "../../cron/validate-timestamp.js";
 import {
   ErrorCodes,
   errorShape,
@@ -111,6 +114,11 @@ export const cronHandlers: GatewayRequestHandlers = {
       );
       return;
     }
+    const cronExprValidation = validateCronScheduleExpr(jobCreate.schedule);
+    if (!cronExprValidation.ok) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, cronExprValidation.message));
+      return;
+    }
     const job = await context.cron.add(jobCreate);
     context.logGateway.info("cron: job created", { jobId: job.id, schedule: jobCreate.schedule });
     respond(true, job, undefined);
@@ -154,6 +162,15 @@ export const cronHandlers: GatewayRequestHandlers = {
           false,
           undefined,
           errorShape(ErrorCodes.INVALID_REQUEST, timestampValidation.message),
+        );
+        return;
+      }
+      const cronExprValidation = validateCronScheduleExpr(patch.schedule);
+      if (!cronExprValidation.ok) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, cronExprValidation.message),
         );
         return;
       }
