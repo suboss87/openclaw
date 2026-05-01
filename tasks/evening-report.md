@@ -21,7 +21,7 @@ PR #10 (fork) closed without merge 2026-04-30 - superseded by PR #12.
 
 | # | title (abbreviated) | area | CI | review | age |
 |---|---|---|---|---|---|
-| #1 | fix(gateway): clean up MCP child processes | gateway | **FAIL** (security-fast) | none | 8d |
+| #1 | fix(gateway): clean up MCP child processes | gateway | **FAIL** security-fast | none | 8d |
 | #2 | fix(discord): partial GuildThreadChannel | channels | skipped | none | 8d |
 | #3 | fix(configure): preserve custom primary model | config | skipped | none | 7d |
 | #4 | fix: check exit code in openUrl (Windows) | infra | skipped | none | 6d |
@@ -30,11 +30,7 @@ PR #10 (fork) closed without merge 2026-04-30 - superseded by PR #12.
 | #7 | fix(cron): re-arm timer on onTimer reject | gateway | skipped | none | 3d |
 | #8 | fix(web-fetch): detect charset from Content-Type | infra | skipped | none | 3d |
 | #9 | fix(exec): pass skill env vars into Docker | agents | skipped | none | 3d |
-| #11 | fix(cron): mirror text to session transcript | gateway | skipped | none | 1d |
-| #12 | fix(gateway): allow Paperclip metadata | gateway | skipped | none | 1d |
-| #13 | fix(cron): reject invalid cron expressions | gateway | skipped | none | 1d |
-| #14 | fix(exec): compute bashElevated in gateway | agents | skipped | none | 1d |
-| #15 | fix(discord): detect READY on WebSocket open | channels | skipped | none | 1d |
+| #11-#15 | 5 new fixes (cron x2, discord, exec, gateway) | mixed | skipped | none | 1d |
 | #16 | fix(agents): inject stream_options.include_usage | agents | queued | none | 0d |
 
 "skipped" = fork CI secrets unavailable (expected for fork PRs, not a code problem)
@@ -59,8 +55,7 @@ PR #4 has one external comment from `xinhanliu0216-droid` (2026-04-25, 6 days ag
 promoting their own fork. NONE contributor association, no reply needed.
 no maintainer comments on any fork PR.
 
-also check upstream #66225 and #73162 via GitHub web - may have live threads that
-are unreachable from this session.
+also check upstream #66225 and #73162 via GitHub web for live threads.
 
 ---
 
@@ -82,7 +77,7 @@ all 9 PRs older than 3 days have zero human review. morning run should post on u
 - PRs #9, #14 (exec/agents): @steipete or @jacobtomlinson
 
 format: one sentence on what it does, CI passing on fork, ask for a look.
-also check #66225, #66544, #68446 status first - may still need change-request follow-up.
+check #66225, #66544, #68446 status first - may need change-request follow-up.
 
 ---
 
