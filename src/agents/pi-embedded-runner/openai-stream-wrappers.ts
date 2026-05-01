@@ -341,6 +341,43 @@ export function createOpenAIServiceTierWrapper(
   };
 }
 
+/**
+ * Injects stream_options.include_usage=true into openai-completions streaming payloads
+ * so usage tokens are captured for any OpenAI-compatible endpoint that supports it.
+ * Most modern endpoints (llama.cpp, OpenAI, vLLM, etc.) return usage in the final
+ * chunk when this option is present; without it the usage fields remain zero.
+ */
+export function createOpenAICompletionsStreamUsageWrapper(
+  baseStreamFn: StreamFn | undefined,
+): StreamFn {
+  const underlying = baseStreamFn ?? streamSimple;
+  return (model, context, options) => {
+    if (model.api !== "openai-completions") {
+      return underlying(model, context, options);
+    }
+    const originalOnPayload = options?.onPayload;
+    return underlying(model, context, {
+      ...options,
+      onPayload: (payload) => {
+        if (
+          payload &&
+          typeof payload === "object" &&
+          (payload as Record<string, unknown>).stream === true
+        ) {
+          const payloadObj = payload as Record<string, unknown>;
+          const existing = payloadObj.stream_options;
+          if (existing && typeof existing === "object" && !Array.isArray(existing)) {
+            (existing as Record<string, unknown>).include_usage = true;
+          } else if (!existing) {
+            payloadObj.stream_options = { include_usage: true };
+          }
+        }
+        return originalOnPayload?.(payload, model);
+      },
+    });
+  };
+}
+
 export function createCodexDefaultTransportWrapper(baseStreamFn: StreamFn | undefined): StreamFn {
   const underlying = baseStreamFn ?? streamSimple;
   return (model, context, options) =>
