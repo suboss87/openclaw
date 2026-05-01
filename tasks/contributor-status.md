@@ -1,4 +1,4 @@
-# OpenClaw Contributor Status - 2026-04-30
+# OpenClaw Contributor Status - 2026-05-01
 
 ## Merged PRs: 5 (gap to 46: ~41)
 
@@ -10,41 +10,57 @@
 
 ## Open Upstream PRs: 4
 
-| # | Title | Age | Comments |
-|---|-------|-----|----------|
-| #73162 | fix(slack): remove socket reconnect attempt cap | 2d | 5 |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 12d | 5 |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name | 16d | 5 |
-| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 16d | 7 |
+| #      | Title                                                                     | Age | Comments |
+| ------ | ------------------------------------------------------------------------- | --- | -------- |
+| #73162 | fix(slack): remove socket reconnect attempt cap                           | 3d  | 5        |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 13d | 5        |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 17d | 5        |
+| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 17d | 7        |
 
-## Fix Branch Ready (needs upstream PR creation)
+## Fix Branches Ready (need upstream PR creation)
 
-- Branch: `suboss87/openclaw:fix/74635-agent-params-paperclip`
+### fix/74635-agent-params-paperclip
+
 - Fix: add `paperclip: Type.Optional(Type.Unknown())` to `AgentParamsSchema`
 - Root cause: Paperclip injects a `paperclip` field in gateway agent payloads;
   `additionalProperties: false` rejected every invocation with
   "unexpected property 'paperclip'"
-- Files changed: `src/gateway/protocol/schema/agent.ts` (+1 line),
+- Files: `src/gateway/protocol/schema/agent.ts` (+1 line),
   `src/gateway/protocol/index.test.ts` (+2 regression tests)
 - Target issue: #74635
-- Status: branch pushed, upstream PR blocked by session MCP restriction
-  (this session can only write to suboss87/openclaw, not openclaw/openclaw)
-  User must open PR manually at:
+- Status: branch pushed, upstream PR blocked by session MCP restriction.
+  User must open PR at:
   https://github.com/suboss87/openclaw/compare/main...fix/74635-agent-params-paperclip
 
-## Session Constraints (2026-04-30)
+### fix/75357-openai-completions-stream-usage
+
+- Fix: inject `stream_options.include_usage=true` into `openai-completions` streaming payloads
+- Root cause: Most OpenAI-compatible endpoints (llama.cpp, vLLM, LM Studio) omit usage
+  from streaming responses unless `stream_options.include_usage=true` is present. The
+  `applyExtraParamsToAgent` chain never set this field, so all completions-API sessions
+  recorded zero tokens.
+- Files: `src/agents/pi-embedded-runner/openai-stream-wrappers.ts` (new wrapper),
+  `src/agents/pi-embedded-runner/extra-params.ts` (chain wrapper),
+  `src/agents/pi-embedded-runner/extra-params.openai-completions-stream-usage.test.ts` (7 tests)
+- Target issue: #75357
+- Fork PR: https://github.com/suboss87/openclaw/pull/16
+- Status: fork PR open. User must open upstream PR at:
+  https://github.com/suboss87/openclaw/compare/main...fix/75357-openai-completions-stream-usage
+
+## Session Constraints (2026-05-01)
 
 - MCP write access restricted to suboss87/openclaw
-- Cannot create PRs in openclaw/openclaw
+- Cannot create PRs in openclaw/openclaw directly
 - Cannot read PR comments from upstream PRs
-- Git fetch from upstream blocked (502 proxy error)
-- All previous PRs created in sessions with broader MCP access
+- All previous upstream PRs created in sessions with broader MCP access
 
 ## Actions This Run
 
-1. Confirmed 5 merged PRs, 4 open upstream PRs
-2. Scanned ~50 new bugs filed 2026-04-29
-3. Found #74635 (Paperclip heartbeat rejected) with no competing PRs
-4. Implemented fix: 1-line schema change + 2 regression tests
-5. Pushed fix branch to fork
-6. Upstream PR blocked by session permissions - branch ready for manual PR
+1. Continued from prior session - fix for #75357 was already implemented
+2. Wrote 7-case unit test suite for `createOpenAICompletionsStreamUsageWrapper`
+3. Ran `pnpm test` - all 7 tests pass
+4. Ran `pnpm check` - lint/format clean
+5. Created branch `fix/75357-openai-completions-stream-usage` off upstream/main
+6. Committed 3 files via `scripts/committer`
+7. Pushed branch to fork origin
+8. Created fork PR https://github.com/suboss87/openclaw/pull/16
