@@ -141,6 +141,118 @@ describe("CronService - armTimer tight loop prevention", () => {
     timeoutSpy.mockRestore();
   });
 
+  it("re-arms the timer via .catch() when onTimer rejects unexpectedly", async () => {
+    const store = await makeStorePath();
+    const now = Date.parse("2026-02-28T12:00:00.000Z");
+
+    await fs.mkdir(path.dirname(store.storePath), { recursive: true });
+    await fs.writeFile(
+      store.storePath,
+      JSON.stringify(
+        {
+          version: 1,
+          jobs: [
+            {
+              id: "future-job",
+              name: "future-job",
+              enabled: true,
+              deleteAfterRun: false,
+              createdAtMs: now,
+              updatedAtMs: now,
+              schedule: { kind: "cron", expr: "0 * * * *" },
+              sessionTarget: "isolated",
+              wakeMode: "next-heartbeat",
+              payload: { kind: "agentTurn", message: "future" },
+              delivery: { mode: "none" },
+              state: { nextRunAtMs: now + 3_600_000 },
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    );
+
+    // nowMs() call order for a no-due-jobs tick:
+    //   1 → initial armTimer (line 533)
+    //   2 → ensureLoaded sets storeLoadedAtMs (store.ts:39)
+    //   3 → dueCheckNow inside locked (timer.ts:597)
+    //   4 → finally's armTimer (line 533) ← throw here so onTimer rejects
+    //   5 → .catch() re-arm armTimer (line 533) ← must succeed
+    let nowCallCount = 0;
+    const realSetTimeout = globalThis.setTimeout.bind(globalThis);
+    const capturedCallbacks: (() => void)[] = [];
+    let handleCounter = 0;
+    const timeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((
+      fn: () => void,
+      _delay: number,
+    ) => {
+      capturedCallbacks.push(fn);
+      return ++handleCounter as unknown as NodeJS.Timeout;
+    }) as typeof setTimeout);
+
+    const state = createCronServiceState({
+      storePath: store.storePath,
+      cronEnabled: true,
+      log: noopLogger,
+      nowMs: () => {
+        nowCallCount++;
+        if (nowCallCount === 4) {
+          throw new Error("simulated nowMs failure in finally armTimer");
+        }
+        return now;
+      },
+      enqueueSystemEvent: vi.fn(),
+      requestHeartbeatNow: vi.fn(),
+      runIsolatedAgentJob: vi.fn().mockResolvedValue({ status: "ok" }),
+    });
+
+    // Pre-load store so the initial armTimer sees the future job and reaches nowMs().
+    state.store = {
+      version: 1,
+      jobs: [
+        {
+          id: "future-job",
+          name: "future-job",
+          enabled: true,
+          deleteAfterRun: false,
+          createdAtMs: now,
+          updatedAtMs: now,
+          schedule: { kind: "cron", expr: "0 * * * *" },
+          sessionTarget: "isolated" as const,
+          wakeMode: "next-heartbeat" as const,
+          payload: { kind: "agentTurn" as const, message: "future" },
+          delivery: { mode: "none" as const },
+          state: { nextRunAtMs: now + 3_600_000 },
+        },
+      ] as CronJob[],
+    };
+
+    // CALL 1: initial armTimer registers the first setTimeout
+    armTimer(state);
+    expect(capturedCallbacks).toHaveLength(1);
+
+    // Invoke the timer callback (simulates the real setTimeout firing)
+    const timerCallback = capturedCallbacks[0];
+    timerCallback();
+
+    // Wait for the async chain (onTimer → .catch()) to fully settle
+    await new Promise<void>((resolve) => realSetTimeout(resolve, 150));
+
+    // onTimer should have rejected (CALL 4 threw in armTimer from finally)
+    expect(noopLogger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.stringContaining("simulated nowMs failure") }),
+      "cron: timer tick failed",
+    );
+
+    // The .catch() re-arm registered a new setTimeout; state.timer must not be null
+    expect(state.timer).not.toBeNull();
+
+    timeoutSpy.mockRestore();
+    await store.cleanup();
+  });
+
   it("breaks the onTimer→armTimer hot-loop with stuck runningAtMs", async () => {
     const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
     const store = await makeStorePath();
