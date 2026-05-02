@@ -23,6 +23,7 @@ import {
 } from "./moonshot-stream-wrappers.js";
 import {
   createCodexDefaultTransportWrapper,
+  createOpenAICompletionsStreamUsageWrapper,
   createOpenAIDefaultTransportWrapper,
   createOpenAIFastModeWrapper,
   createOpenAIResponsesContextManagementWrapper,
@@ -482,4 +483,11 @@ export function applyExtraParamsToAgent(
       log.warn(`ignoring invalid parallel_tool_calls param: ${summary}`);
     }
   }
+
+  // Request usage in the final streaming chunk for openai-completions endpoints.
+  // Without stream_options.include_usage=true, most OpenAI-compatible providers
+  // (llama.cpp, vLLM, etc.) omit usage from streaming responses, causing sessions
+  // to record zero tokens even when the endpoint returns usage for non-streaming
+  // requests. See: openclaw/openclaw#75357
+  agent.streamFn = createOpenAICompletionsStreamUsageWrapper(agent.streamFn);
 }
