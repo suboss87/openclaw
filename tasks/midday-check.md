@@ -1,59 +1,36 @@
-# midday check - 2026-05-01
+# midday check - 2026-05-02
 
-## open PR status (upstream openclaw/openclaw)
+## open PRs
 
-| PR     | title                                                                     | comments | last updated         | status                                                 |
-| ------ | ------------------------------------------------------------------------- | -------- | -------------------- | ------------------------------------------------------ |
-| #73162 | fix(slack): remove socket reconnect attempt cap                           | 7        | 2026-04-30 23:41 UTC | open; PR comment reads blocked by MCP scope            |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 6        | 2026-04-30 18:26 UTC | open; PR comment reads blocked by MCP scope            |
-| #66225 | fix(agents): align final tag regexes for `<final/>` variant              | 7        | 2026-04-30 20:36 UTC | open; PR comment reads blocked by MCP scope            |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 5        | 2026-04-25           | open, no new activity since last check                 |
-
-all 4 PRs updated at least once in the last 48h but PR comments on openclaw/openclaw
-remain unreadable - MCP tools restricted to suboss87/openclaw. manual review needed.
-
-## fork PRs (suboss87/openclaw) awaiting upstream submission
-
-16 open fork PRs, none merged. most recent that need upstream PRs opened by hand:
-
-- fork PR #16 - fix/75357-openai-completions-stream-usage (closes #75357, filed today)
-- fork PR #15 - fix/74617-discord-gateway-ready-race
-- fork PR #14 - fix/74646-elevated-exec-followup-missing-bash-elevated
-- fork PR #13 - fix/74459-cron-edit-invalid-cron-expr
-- fork PR #12 - fix/74635-agent-params-paperclip
-
-user must open the upstream PR from each fork branch at:
-https://github.com/suboss87/openclaw/compare/main...<branch-name>
-then retarget base to openclaw/openclaw:main.
+| PR  | title                                                                              | last updated | status             |
+| --- | ---------------------------------------------------------------------------------- | ------------ | ------------------ |
+| #16 | fix(agents): inject stream_options.include_usage for openai-completions streaming  | 2026-05-01   | review in progress |
+| #15 | fix(discord): detect READY when WebSocket opened before lifecycle debug listener   | 2026-04-30   | waiting for review |
+| #14 | fix(exec): compute bashElevated in gateway agent path                              | 2026-04-30   | waiting for review |
+| #13 | fix(cron): reject invalid cron expressions on disabled jobs before persisting      | 2026-04-30   | waiting for review |
+| #12 | fix(gateway): allow Paperclip integration metadata through AgentParams validator   | 2026-04-30   | waiting for review |
+| #11 | fix(cron): mirror synthesized text back to session transcript on direct delivery   | 2026-04-30   | waiting for review |
+| #9  | fix(exec): pass skill env vars into Docker sandbox container                       | 2026-04-28   | waiting for review |
+| #8  | fix(web-fetch): detect response charset from Content-Type and HTML meta            | 2026-04-30   | waiting for review |
+| #7  | fix(cron): re-arm timer when onTimer rejects unexpectedly                          | 2026-04-30   | waiting for review |
+| #6  | fix(image): surface underlying error when image optimization fails                 | 2026-04-28   | waiting for review |
+| #5  | fix(bonjour): also suppress CIAO PROBING CANCELLED in rejection handler            | 2026-04-26   | waiting for review |
+| #4  | fix: check exit code in openUrl to avoid false positive on Windows                 | 2026-04-25   | waiting for review |
+| #3  | fix(configure): preserve custom primary model when reconfiguring auth              | 2026-04-24   | waiting for review |
+| #2  | fix(discord): handle partial GuildThreadChannel in thread slash command parentId   | 2026-04-23   | waiting for review |
+| #1  | fix(gateway): clean up MCP child processes after nested lane runs end              | 2026-04-23   | waiting for review |
 
 ## actions this run
 
-- fork sync: upstream proxy still blocked; origin/main already at HEAD (local main
-  is ahead of origin/main with task commits, upstream unreachable)
-- PR feedback: upstream PR comment threads unreadable (MCP restricted); comment
-  counts on #73162 (+2), #68446 (+1), #66225 (same) changed since yesterday - human
-  eyeball recommended
-- bug hunt: 19 fresh bugs filed today (2026-05-01) reviewed
-  - #75491 (dreaming block duplication, regex g flag missing) - PR #75495 already up
-    by ottodeng, clean fix
-  - #75362 (openai MCP tool schema properties:undefined) - PR #75401 up by SymbolStar
-  - #75433 (SecretRef crash in embedded reply) - PR #75445 up by lonexreb
-  - #75394 (WhatsApp QR missing qrcode package) - PR #75425 up by lonexreb
-  - #75358 (PDF canvas fallback) - PR #75370 up by mgustimz
-  - #75405 (Telegram group slash commands silently dropped in non-main bindings,
-    0 competing PRs) - disqualified: regression is v2026.4.27; local repo is v2026.3.12,
-    code structure has drifted - any fix would be based on wrong version
-  - #75357 (openai-completions zero token usage) - fixed by morning session (fork PR
-    #16); skipped to avoid duplicate
-  - remaining 12 issues: vague repro, deployment-specific, or version-mismatch
-- no new fix opened this run
+- PR #16: khaney64 flagged test name "does not overwrite include_usage if already set" was backwards - test asserts the wrapper DOES override it. renamed to khaney64's suggestion "overrides include_usage=false to ensure streaming usage is returned". pushed 1cc0f6b, replied to thread.
+- PR #8, #7: devin-ai-integration bot review threads - both resolved/outdated, skipped.
+- fork sync: upstream remote blocked by proxy (restricted to suboss87/openclaw only).
+
+## bug hunt
+
+skipped - MCP restricted to suboss87/openclaw; can't query openclaw/openclaw issues. no gh CLI in this environment.
 
 ## escalations
 
-- all 4 upstream PRs need human comment-thread review (MCP scope blocks this session)
-- 16 fork PRs waiting; user must open upstream PRs manually from fork branches
-- #75405 (Telegram group slash commands in non-main bindings, 2026.4.27 regression)
-  remains uncontested - genuine bug worth picking up once local repo syncs to current
-  upstream
-- upstream git access via proxy still blocked on every run; fork sync step is a no-op
-  until proxy allows openclaw/openclaw
+- 15 fork PRs waiting on upstream review; user needs to track those in upstream repo directly.
+- upstream git proxy still blocked on every run; fork sync is a no-op until proxy allows openclaw/openclaw.
