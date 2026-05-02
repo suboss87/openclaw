@@ -1,4 +1,4 @@
-# OpenClaw Contributor Status - 2026-05-01
+# OpenClaw Contributor Status - 2026-05-02
 
 ## Merged PRs: 5 (gap to 46: ~41)
 
@@ -12,10 +12,10 @@
 
 | #      | Title                                                                     | Age | Comments |
 | ------ | ------------------------------------------------------------------------- | --- | -------- |
-| #73162 | fix(slack): remove socket reconnect attempt cap                           | 3d  | 5        |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 13d | 5        |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 17d | 5        |
-| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 17d | 7        |
+| #73162 | fix(slack): remove socket reconnect attempt cap                           | 4d  | 5        |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 14d | 5        |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 18d | 5        |
+| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 18d | 7        |
 
 ## Fix Branches Ready (need upstream PR creation)
 
@@ -47,20 +47,46 @@
 - Status: fork PR open. User must open upstream PR at:
   https://github.com/suboss87/openclaw/compare/main...fix/75357-openai-completions-stream-usage
 
-## Session Constraints (2026-05-01)
+### fix/75814-auth-profile-stale-secret-ref-startup (NEW - 2026-05-02)
+
+- Fix: treat auth-profile SecretRef failures as non-fatal at gateway startup
+- Root cause: `prepareSecretsRuntimeSnapshot()` batched ALL SecretRef resolution
+  (config + auth-profile) in one call. Any failure - including a stale provider
+  name in a non-default auth profile - threw `SecretProviderResolutionError`,
+  which `activateRuntimeSecrets(reason: "startup")` converted to a fatal abort.
+- Change: config-level refs remain fatal; auth-profile refs now soft-fail with
+  an `AUTH_PROFILE_SECRET_REF_UNRESOLVED` warning, preserving the plaintext
+  credential if available.
+- Files:
+  - `src/secrets/runtime-shared.ts`: add `AUTH_PROFILE_SECRET_REF_UNRESOLVED` warning code
+  - `src/secrets/runtime.ts`: split resolution into config (fatal) + auth-profile (soft-fail)
+  - `src/secrets/runtime.test.ts`: 2 new regression tests
+  - `src/gateway/server.reload.test.ts`: update integration test to expect startup success
+- Commit: 593da6a
+- Target issue: #75814
+- Branch: fix/75814-auth-profile-stale-secret-ref-startup (pushed to fork)
+- Status: branch pushed. User must open upstream PR:
+  https://github.com/suboss87/openclaw/compare/main...fix/75814-auth-profile-stale-secret-ref-startup
+
+## Session Constraints (ongoing)
 
 - MCP write access restricted to suboss87/openclaw
 - Cannot create PRs in openclaw/openclaw directly
 - Cannot read PR comments from upstream PRs
 - All previous upstream PRs created in sessions with broader MCP access
 
-## Actions This Run
+## Actions This Run (2026-05-02)
 
-1. Continued from prior session - fix for #75357 was already implemented
-2. Wrote 7-case unit test suite for `createOpenAICompletionsStreamUsageWrapper`
-3. Ran `pnpm test` - all 7 tests pass
-4. Ran `pnpm check` - lint/format clean
-5. Created branch `fix/75357-openai-completions-stream-usage` off upstream/main
-6. Committed 3 files via `scripts/committer`
-7. Pushed branch to fork origin
-8. Created fork PR https://github.com/suboss87/openclaw/pull/16
+1. Resumed investigation of #75814 (gateway startup aborts on stale auth-profile SecretRef)
+2. Located fatal check: `server.impl.ts:391` inside `activateRuntimeSecrets(reason: "startup")`
+3. Traced root cause through `prepareSecretsRuntimeSnapshot` → `resolveSecretRefValues`
+4. Implemented fix in `src/secrets/runtime.ts`:
+   - Added `resolveAuthProfileAssignmentsSoftFail()` helper (batch-first, per-item fallback)
+   - Split `context.assignments` at `configAssignmentBoundary` to separate config vs auth-profile refs
+   - Auth-profile failures emit `AUTH_PROFILE_SECRET_REF_UNRESOLVED` warning, not throw
+5. Added new warning code to `src/secrets/runtime-shared.ts`
+6. Added 2 regression tests to `src/secrets/runtime.test.ts`
+7. Updated `src/gateway/server.reload.test.ts` integration test to match new behavior
+8. Ran `pnpm test src/secrets/` → 201/201 pass
+9. Ran `pnpm test src/gateway/server.reload.test.ts` → 11/12 pass (1 pre-existing env failure)
+10. Committed and pushed branch `fix/75814-auth-profile-stale-secret-ref-startup`
