@@ -131,7 +131,7 @@ describe("extra-params: openai-completions stream usage injection", () => {
     expect(payload.stream_options).toEqual({ custom_key: "val", include_usage: true });
   });
 
-  it("does not overwrite include_usage if already set", () => {
+  it("overrides include_usage=false to ensure streaming usage is returned", () => {
     const payload = runStreamUsageCase({
       applyProvider: "local",
       applyModelId: "llama-3.1",
