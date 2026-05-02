@@ -603,13 +603,13 @@ describe("gateway hot reload", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("fails startup when auth-profile secret refs are unresolved", async () => {
+  it("allows startup when auth-profile secret refs are unresolved (emits warning instead)", async () => {
+    // Regression guard for #75814: a stale/missing SecretRef in a non-default auth profile
+    // must not abort gateway startup. The profile is left in a degraded state with a warning.
     await writeAuthProfileEnvRefStore();
     delete process.env.MISSING_OPENCLAW_AUTH_REF;
     try {
-      await expect(withGatewayServer(async () => {})).rejects.toThrow(
-        'Environment variable "MISSING_OPENCLAW_AUTH_REF" is missing or empty.',
-      );
+      await expect(withGatewayServer(async () => {})).resolves.toBeUndefined();
     } finally {
       await removeMainAuthProfileStore();
     }

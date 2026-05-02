@@ -412,6 +412,71 @@ describe("secrets runtime snapshot", () => {
     );
   });
 
+  it("does not abort when an auth-profile keyRef points to an unconfigured provider", async () => {
+    // Regression test for #75814: a stale SecretRef in a non-default auth profile
+    // (e.g., a provider removed from config.secrets.providers) must not abort gateway startup.
+    const snapshot = await prepareSecretsRuntimeSnapshot({
+      config: asConfig({ secrets: {} }), // no providers configured
+      env: {},
+      agentDirs: ["/tmp/openclaw-agent-main"],
+      loadAuthStore: () =>
+        loadAuthStoreWithProfiles({
+          "openai:stale": {
+            type: "api_key",
+            provider: "openai",
+            key: "plaintext-fallback", // pragma: allowlist secret
+            keyRef: { source: "exec", provider: "removed-vault", id: "openai-key" },
+          },
+        }),
+    });
+
+    // Should not throw; the stale ref produces a warning instead.
+    expect(snapshot.warnings.some((w) => w.code === "AUTH_PROFILE_SECRET_REF_UNRESOLVED")).toBe(
+      true,
+    );
+    const warning = snapshot.warnings.find((w) => w.code === "AUTH_PROFILE_SECRET_REF_UNRESOLVED");
+    expect(warning?.path).toContain("openai:stale");
+    // Plaintext key remains untouched (ref could not be applied).
+    expect(
+      (snapshot.authStores[0]?.store.profiles["openai:stale"] as Record<string, unknown>)?.key,
+    ).toBe("plaintext-fallback");
+  });
+
+  it("still resolves healthy auth-profile refs when one profile has a stale ref", async () => {
+    const snapshot = await prepareSecretsRuntimeSnapshot({
+      config: asConfig({ secrets: {} }),
+      env: { GOOD_KEY: "resolved-good-key" }, // pragma: allowlist secret
+      agentDirs: ["/tmp/openclaw-agent-main"],
+      loadAuthStore: () =>
+        loadAuthStoreWithProfiles({
+          "openai:good": {
+            type: "api_key",
+            provider: "openai",
+            key: "old-key",
+            keyRef: { source: "env", provider: "default", id: "GOOD_KEY" },
+          },
+          "openai:stale": {
+            type: "api_key",
+            provider: "openai",
+            key: "plaintext-fallback", // pragma: allowlist secret
+            keyRef: { source: "exec", provider: "missing-vault", id: "openai-key" },
+          },
+        }),
+    });
+
+    // Good profile resolves.
+    expect(
+      (snapshot.authStores[0]?.store.profiles["openai:good"] as Record<string, unknown>)?.key,
+    ).toBe("resolved-good-key");
+    // Stale profile falls back to plaintext and emits a warning.
+    expect(
+      (snapshot.authStores[0]?.store.profiles["openai:stale"] as Record<string, unknown>)?.key,
+    ).toBe("plaintext-fallback");
+    expect(snapshot.warnings.some((w) => w.code === "AUTH_PROFILE_SECRET_REF_UNRESOLVED")).toBe(
+      true,
+    );
+  });
+
   it("fails fast at startup when selected web search provider ref is unresolved", async () => {
     await expect(
       prepareSecretsRuntimeSnapshot({

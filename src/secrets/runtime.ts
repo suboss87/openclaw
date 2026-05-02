@@ -17,12 +17,14 @@ import {
   collectCommandSecretAssignmentsFromSnapshot,
   type CommandSecretAssignment,
 } from "./command-config.js";
-import { resolveSecretRefValues } from "./resolve.js";
+import { resolveSecretRefValues, type SecretRefResolveCache } from "./resolve.js";
 import { collectAuthStoreAssignments } from "./runtime-auth-collectors.js";
 import { collectConfigAssignments } from "./runtime-config-collectors.js";
 import {
   applyResolvedAssignments,
   createResolverContext,
+  pushWarning,
+  type SecretAssignment,
   type SecretResolverWarning,
 } from "./runtime-shared.js";
 import { resolveRuntimeWebTools, type RuntimeWebToolsMetadata } from "./runtime-web-tools.js";
@@ -99,6 +101,53 @@ function resolveRefreshAgentDirs(
   return [...new Set([...context.explicitAgentDirs, ...configDerived])];
 }
 
+// Resolves auth-profile SecretRef assignments without throwing on failure.
+// A stale provider name (e.g., removed from config) should not abort gateway startup;
+// affected profiles are left with their plaintext values (if any) and a warning is emitted.
+async function resolveAuthProfileAssignmentsSoftFail(params: {
+  assignments: SecretAssignment[];
+  config: OpenClawConfig;
+  env: NodeJS.ProcessEnv;
+  cache: SecretRefResolveCache;
+}): Promise<SecretResolverWarning[]> {
+  if (params.assignments.length === 0) {
+    return [];
+  }
+
+  // Optimistic batch attempt first for efficiency.
+  try {
+    const refs = params.assignments.map((a) => a.ref);
+    const resolved = await resolveSecretRefValues(refs, {
+      config: params.config,
+      env: params.env,
+      cache: params.cache,
+    });
+    applyResolvedAssignments({ assignments: params.assignments, resolved });
+    return [];
+  } catch {
+    // Batch failed; fall back to per-assignment so healthy refs still apply.
+  }
+
+  const warnings: SecretResolverWarning[] = [];
+  for (const assignment of params.assignments) {
+    try {
+      const resolved = await resolveSecretRefValues([assignment.ref], {
+        config: params.config,
+        env: params.env,
+        cache: params.cache,
+      });
+      applyResolvedAssignments({ assignments: [assignment], resolved });
+    } catch (err) {
+      warnings.push({
+        code: "AUTH_PROFILE_SECRET_REF_UNRESOLVED",
+        path: assignment.path,
+        message: `[AUTH_PROFILE_SECRET_REF_UNRESOLVED] Secret ref at "${assignment.path}" could not be resolved; profile will use its plaintext credential if available: ${String(err)}`,
+      });
+    }
+  }
+  return warnings;
+}
+
 export async function prepareSecretsRuntimeSnapshot(params: {
   config: OpenClawConfig;
   env?: NodeJS.ProcessEnv;
@@ -117,6 +166,9 @@ export async function prepareSecretsRuntimeSnapshot(params: {
     context,
   });
 
+  // Snapshot boundary so we can split config vs auth-profile assignments below.
+  const configAssignmentBoundary = context.assignments.length;
+
   const loadAuthStore = params.loadAuthStore ?? loadAuthProfileStoreForSecretsRuntime;
   const candidateDirs = params.agentDirs?.length
     ? [...new Set(params.agentDirs.map((entry) => resolveUserPath(entry)))]
@@ -133,17 +185,31 @@ export async function prepareSecretsRuntimeSnapshot(params: {
     authStores.push({ agentDir, store });
   }
 
-  if (context.assignments.length > 0) {
-    const refs = context.assignments.map((assignment) => assignment.ref);
+  // Config assignments are required: any unresolved ref is fatal.
+  const configAssignments = context.assignments.slice(0, configAssignmentBoundary);
+  if (configAssignments.length > 0) {
+    const refs = configAssignments.map((a) => a.ref);
     const resolved = await resolveSecretRefValues(refs, {
       config: sourceConfig,
       env: context.env,
       cache: context.cache,
     });
-    applyResolvedAssignments({
-      assignments: context.assignments,
-      resolved,
+    applyResolvedAssignments({ assignments: configAssignments, resolved });
+  }
+
+  // Auth-profile assignments are best-effort: a stale/missing provider ref should
+  // not abort gateway startup. Unresolvable refs become warnings; good ones still apply.
+  const authProfileAssignments = context.assignments.slice(configAssignmentBoundary);
+  if (authProfileAssignments.length > 0) {
+    const authProfileWarnings = await resolveAuthProfileAssignmentsSoftFail({
+      assignments: authProfileAssignments,
+      config: sourceConfig,
+      env: context.env,
+      cache: context.cache,
     });
+    for (const w of authProfileWarnings) {
+      pushWarning(context, w);
+    }
   }
 
   const snapshot = {
