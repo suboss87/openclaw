@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { resolveStateDir } from "../config/paths.js";
 import { sendVoiceMessageDiscord } from "../discord/send.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-openclaw-dir.js";
-import { optimizeImageToPng } from "../media/image-ops.js";
+import * as imageOps from "../media/image-ops.js";
 import { mockPinnedHostnameResolution } from "../test-helpers/ssrf.js";
 import { captureEnv } from "../test-utils/env.js";
 import {
@@ -107,7 +107,7 @@ beforeAll(async () => {
     .png()
     .toBuffer();
   fallbackPngFile = await writeTempFile(fallbackPngBuffer, ".png");
-  const smallestPng = await optimizeImageToPng(fallbackPngBuffer, 1);
+  const smallestPng = await imageOps.optimizeImageToPng(fallbackPngBuffer, 1);
   fallbackPngCap = Math.max(1, smallestPng.optimizedSize - 1);
   const jpegOptimized = await optimizeImageToJpeg(fallbackPngBuffer, fallbackPngCap);
   if (jpegOptimized.buffer.length >= smallestPng.optimizedSize) {
@@ -501,5 +501,42 @@ describe("local media root guard", () => {
         kind: undefined,
       }),
     );
+  });
+});
+
+describe("image optimization error surfacing", () => {
+  it("includes underlying error message when resizeToJpeg always fails", async () => {
+    const underlyingError = new Error("Cannot find package 'sharp'");
+    const spy = vi.spyOn(imageOps, "resizeToJpeg").mockRejectedValue(underlyingError);
+    try {
+      await expect(optimizeImageToJpeg(largeJpegBuffer, 1)).rejects.toThrow(
+        /Failed to optimize image: Cannot find package 'sharp'/,
+      );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("sets error cause when resizeToJpeg always fails", async () => {
+    const underlyingError = new Error("sharp native module failed");
+    const spy = vi.spyOn(imageOps, "resizeToJpeg").mockRejectedValue(underlyingError);
+    try {
+      const caught = await optimizeImageToJpeg(largeJpegBuffer, 1).catch((e: unknown) => e);
+      expect(caught).toBeInstanceOf(Error);
+      expect((caught as Error).cause).toBe(underlyingError);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("falls back to generic message when resizeToJpeg throws a non-Error", async () => {
+    const spy = vi.spyOn(imageOps, "resizeToJpeg").mockRejectedValue(null);
+    try {
+      await expect(optimizeImageToJpeg(largeJpegBuffer, 1)).rejects.toThrow(
+        "Failed to optimize image",
+      );
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
