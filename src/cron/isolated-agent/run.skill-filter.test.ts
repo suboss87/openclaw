@@ -324,7 +324,10 @@ describe("runCronIsolatedAgentTurn — skill filter", () => {
       expect(runCliAgentMock.mock.calls[0][0]).toHaveProperty("cliSessionId", undefined);
     });
 
-    it("reuses stored cliSessionId on continuation runs (isNewSession=false)", async () => {
+    it("does not pass stored cliSessionId on continuation runs (isNewSession=false, #76289)", async () => {
+      // Even when a CLI session ID was stored from a previous run, isolated cron must
+      // never pass it. Passing a stored ID activates the resume watchdog profile
+      // (maxMs 180 s), silently capping no-output timeout regardless of timeoutSeconds.
       getCliSessionIdMock.mockReturnValue("existing-cli-session-def");
       isCliProviderMock.mockReturnValue(true);
       runCliAgentMock.mockResolvedValue({
@@ -351,11 +354,9 @@ describe("runCronIsolatedAgentTurn — skill filter", () => {
       await runCronIsolatedAgentTurn(makeSkillParams());
 
       expect(runCliAgentMock).toHaveBeenCalledOnce();
-      // Continuation: cliSessionId should be passed through for session resume.
-      expect(runCliAgentMock.mock.calls[0][0]).toHaveProperty(
-        "cliSessionId",
-        "existing-cli-session-def",
-      );
+      // Isolated cron: cliSessionId must always be undefined to use the fresh watchdog
+      // profile and honor the configured timeoutSeconds.
+      expect(runCliAgentMock.mock.calls[0][0]).toHaveProperty("cliSessionId", undefined);
     });
   });
 

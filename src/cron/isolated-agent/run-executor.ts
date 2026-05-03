@@ -9,7 +9,6 @@ import {
 } from "./channel-output-policy.js";
 import { resolveCronPayloadOutcome } from "./helpers.js";
 import {
-  getCliSessionId,
   isCliProvider,
   LiveSessionModelSwitchError,
   logWarn,
@@ -124,9 +123,12 @@ export function createCronPromptExecutor(params: {
         const bootstrapPromptWarningSignature =
           bootstrapPromptWarningSignaturesSeen[bootstrapPromptWarningSignaturesSeen.length - 1];
         if (isCliProvider(providerOverride, params.cfgWithAgentDefaults)) {
-          const cliSessionId = params.cronSession.isNewSession
-            ? undefined
-            : await getCliSessionId(params.cronSession.sessionEntry, providerOverride);
+          // Isolated cron runs must never pass a stored CLI session ID regardless of
+          // isNewSession. Passing a stored ID activates the resume watchdog profile
+          // (noOutputTimeoutRatio 0.3, maxMs 180 s) instead of the fresh profile
+          // (ratio 0.8, maxMs 600 s), silently capping no-output timeout at 180 s
+          // regardless of the configured timeoutSeconds. See: #29774, #76289
+          const cliSessionId = undefined;
           const result = await runCliAgent({
             sessionId: params.cronSession.sessionEntry.sessionId,
             sessionKey: params.runSessionKey,
