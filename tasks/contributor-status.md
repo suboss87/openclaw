@@ -1,4 +1,4 @@
-# OpenClaw Contributor Status - 2026-05-01
+# OpenClaw Contributor Status - 2026-05-03
 
 ## Merged PRs: 5 (gap to 46: ~41)
 
@@ -10,57 +10,51 @@
 
 ## Open Upstream PRs: 4
 
-| #      | Title                                                                     | Age | Comments |
-| ------ | ------------------------------------------------------------------------- | --- | -------- |
-| #73162 | fix(slack): remove socket reconnect attempt cap                           | 3d  | 5        |
-| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 13d | 5        |
-| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 17d | 5        |
-| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 17d | 7        |
+| #      | Title                                                                     | Age | Comments | Status                            |
+| ------ | ------------------------------------------------------------------------- | --- | -------- | --------------------------------- |
+| #73162 | fix(slack): remove socket reconnect attempt cap                           | 5d  | 7        | quasi-approved, awaiting merge    |
+| #68446 | fix(whatsapp): stop DM allowFrom fallback into group policy sender bypass | 15d | 6        | bots flagging; desc/code mismatch |
+| #66544 | fix(gateway): exclude heartbeat sender ID from session display name       | 19d | 6        | green CI, bumped Apr 25           |
+| #66225 | fix(agents): align final tag regexes to handle self-closing final variant | 19d | 7        | green CI, bumped Apr 23           |
 
-## Fix Branches Ready (need upstream PR creation)
+## Fix Branch Ready (needs upstream PR)
 
-### fix/74635-agent-params-paperclip
+### fix/76289-cron-cli-session-watchdog-cap
 
-- Fix: add `paperclip: Type.Optional(Type.Unknown())` to `AgentParamsSchema`
-- Root cause: Paperclip injects a `paperclip` field in gateway agent payloads;
-  `additionalProperties: false` rejected every invocation with
-  "unexpected property 'paperclip'"
-- Files: `src/gateway/protocol/schema/agent.ts` (+1 line),
-  `src/gateway/protocol/index.test.ts` (+2 regression tests)
-- Target issue: #74635
-- Status: branch pushed, upstream PR blocked by session MCP restriction.
-  User must open PR at:
-  https://github.com/suboss87/openclaw/compare/main...fix/74635-agent-params-paperclip
+- Issue: #76289 - cron `timeoutSeconds` silently capped at 180s in isolated runs
+- Root cause: `run-executor.ts:127-129` passed stored CLI session ID for non-new sessions,
+  activating `CLI_RESUME_WATCHDOG_DEFAULTS` (`maxMs: 180s`) regardless of configured timeout
+- Fix: always pass `cliSessionId = undefined` in isolated cron runs (fresh watchdog profile,
+  `maxMs: 600s`)
+- Files: `src/cron/isolated-agent/run-executor.ts` (+7/-4),
+  `src/cron/isolated-agent/run.skill-filter.test.ts` (+7/-6)
+- Tests: all 16 pass; lint clean
+- Branch: https://github.com/suboss87/openclaw/tree/fix/76289-cron-cli-session-watchdog-cap
+- PR URL to open: https://github.com/suboss87/openclaw/compare/fix/76289-cron-cli-session-watchdog-cap
 
-### fix/75357-openai-completions-stream-usage
+### fix/74635-agent-params-paperclip (prior run)
 
-- Fix: inject `stream_options.include_usage=true` into `openai-completions` streaming payloads
-- Root cause: Most OpenAI-compatible endpoints (llama.cpp, vLLM, LM Studio) omit usage
-  from streaming responses unless `stream_options.include_usage=true` is present. The
-  `applyExtraParamsToAgent` chain never set this field, so all completions-API sessions
-  recorded zero tokens.
-- Files: `src/agents/pi-embedded-runner/openai-stream-wrappers.ts` (new wrapper),
-  `src/agents/pi-embedded-runner/extra-params.ts` (chain wrapper),
-  `src/agents/pi-embedded-runner/extra-params.openai-completions-stream-usage.test.ts` (7 tests)
-- Target issue: #75357
-- Fork PR: https://github.com/suboss87/openclaw/pull/16
-- Status: fork PR open. User must open upstream PR at:
-  https://github.com/suboss87/openclaw/compare/main...fix/75357-openai-completions-stream-usage
+- Branch: pushed, upstream PR blocked by session MCP restriction
+- PR URL to open: https://github.com/suboss87/openclaw/compare/main...fix/74635-agent-params-paperclip
 
-## Session Constraints (2026-05-01)
+### fix/75357-openai-completions-stream-usage (prior run)
 
-- MCP write access restricted to suboss87/openclaw
-- Cannot create PRs in openclaw/openclaw directly
-- Cannot read PR comments from upstream PRs
-- All previous upstream PRs created in sessions with broader MCP access
+- Branch: pushed
+- PR URL to open: https://github.com/suboss87/openclaw/compare/main...fix/75357-openai-completions-stream-usage
 
-## Actions This Run
+## Session Constraints (2026-05-03)
 
-1. Continued from prior session - fix for #75357 was already implemented
-2. Wrote 7-case unit test suite for `createOpenAICompletionsStreamUsageWrapper`
-3. Ran `pnpm test` - all 7 tests pass
-4. Ran `pnpm check` - lint/format clean
-5. Created branch `fix/75357-openai-completions-stream-usage` off upstream/main
-6. Committed 3 files via `scripts/committer`
-7. Pushed branch to fork origin
-8. Created fork PR https://github.com/suboss87/openclaw/pull/16
+- MCP write access restricted to suboss87/openclaw; cannot create upstream PRs
+- Cannot read PR comments from upstream via MCP (search tools work read-only)
+
+## Actions This Run (2026-05-03)
+
+1. Git identity confirmed: suboss87@gmail.com
+2. Checked 4 open upstream PRs - no human comments requiring response
+3. PR #73162 (slack): martingarramon quasi-approved Apr 30; awaiting maintainer merge
+4. PR #68446 (whatsapp): bots flagging security concerns; PR description says inbound-policy.ts
+   but actual diff is in group-activation.ts - flagged for owner review
+5. PR #66544, #66225: green CI, no new human comments; no action needed
+6. Investigated #76289 (cron 180s watchdog cap) - no competing PRs
+7. Fixed: always pass `cliSessionId=undefined` in isolated cron runs to use fresh watchdog profile
+8. Branch fix/76289-cron-cli-session-watchdog-cap pushed to fork; upstream PR needs manual creation
