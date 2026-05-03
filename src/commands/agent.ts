@@ -9,6 +9,7 @@ import { createSubsystemLogger } from "../logging/subsystem.js";
 const log = createSubsystemLogger("commands/agent");
 import {
   listAgentIds,
+  resolveAgentConfig,
   resolveAgentDir,
   resolveEffectiveModelFallbacks,
   resolveSessionAgentId,
@@ -17,6 +18,7 @@ import {
 } from "../agents/agent-scope.js";
 import { ensureAuthProfileStore } from "../agents/auth-profiles.js";
 import { clearSessionAuthProfileOverride } from "../agents/auth-profiles/session-override.js";
+import type { ExecElevatedDefaults } from "../agents/bash-tools.js";
 import { resolveBootstrapWarningSignaturesSeen } from "../agents/bootstrap-budget.js";
 import { runCliAgent } from "../agents/cli-runner.js";
 import { getCliSessionId, setCliSessionId } from "../agents/cli-session.js";
@@ -455,6 +457,21 @@ function runAgentAttempt(params: {
     params.providerOverride === params.primaryProvider
       ? params.sessionEntry?.authProfileOverride
       : undefined;
+
+  // Compute elevated bash permissions for this run. Channel-originated runs
+  // (Telegram, Discord, etc.) resolve bashElevated via get-reply-directives with
+  // full sender identity; the gateway `agent` path has no sender context, so
+  // allowed is tied to senderIsOwner (admin-scope callers only).
+  const agentElevatedCfg = resolveAgentConfig(params.cfg, params.sessionAgentId)?.tools?.elevated;
+  const elevatedGlobalEnabled = params.cfg.tools?.elevated?.enabled !== false;
+  const elevatedAgentEnabled = agentElevatedCfg?.enabled !== false;
+  const elevatedEnabled = elevatedGlobalEnabled && elevatedAgentEnabled;
+  const bashElevated: ExecElevatedDefaults = {
+    enabled: elevatedEnabled,
+    allowed: elevatedEnabled && params.opts.senderIsOwner,
+    defaultLevel: "ask",
+  };
+
   return runEmbeddedPiAgent({
     sessionId: params.sessionId,
     sessionKey: params.sessionKey,
@@ -473,6 +490,7 @@ function runAgentAttempt(params: {
     replyToMode: params.runContext.replyToMode,
     hasRepliedRef: params.runContext.hasRepliedRef,
     senderIsOwner: params.opts.senderIsOwner,
+    bashElevated,
     sessionFile: params.sessionFile,
     workspaceDir: params.workspaceDir,
     config: params.cfg,

@@ -151,33 +151,12 @@ export async function runDiscordGatewayLifecycle(params: {
     mutableGateway.state.sequence = null;
     mutableGateway.sequence = null;
   };
-  const onGatewayDebug = (msg: unknown) => {
-    const message = String(msg);
-    const at = Date.now();
-    pushStatus({ lastEventAt: at });
-    if (message.includes("WebSocket connection closed")) {
-      // Carbon marks `isConnected` true only after READY/RESUMED and flips it
-      // false during reconnect handling after this debug line is emitted.
-      if (gateway?.isConnected) {
-        resetHelloStallCounter();
-      }
-      reconnectStallWatchdog.arm(at);
-      pushStatus({
-        connected: false,
-        lastDisconnect: {
-          at,
-          status: parseGatewayCloseCode(message),
-        },
-      });
-      clearHelloWatch();
-      return;
-    }
-    if (!message.includes("WebSocket connection opened")) {
-      return;
-    }
+  // Shared helper: start the hello-connected poll and 30-second stall timeout.
+  // Called both from onGatewayDebug("WebSocket connection opened") and from the
+  // startup race-guard below (when "opened" fired before our listener registered).
+  const startHelloWatch = (at: number) => {
     reconnectStallWatchdog.disarm();
     clearHelloWatch();
-
     let sawConnected = gateway?.isConnected === true;
     if (sawConnected) {
       pushStatus({
@@ -202,7 +181,6 @@ export async function runDiscordGatewayLifecycle(params: {
         helloConnectedPollId = undefined;
       }
     }, HELLO_CONNECTED_POLL_MS);
-
     helloTimeoutId = setTimeout(() => {
       if (helloConnectedPollId) {
         clearInterval(helloConnectedPollId);
@@ -240,20 +218,60 @@ export async function runDiscordGatewayLifecycle(params: {
       helloTimeoutId = undefined;
     }, HELLO_TIMEOUT_MS);
   };
+
+  const onGatewayDebug = (msg: unknown) => {
+    const message = String(msg);
+    const at = Date.now();
+    pushStatus({ lastEventAt: at });
+    if (message.includes("WebSocket connection closed")) {
+      // Carbon marks `isConnected` true only after READY/RESUMED and flips it
+      // false during reconnect handling after this debug line is emitted.
+      if (gateway?.isConnected) {
+        resetHelloStallCounter();
+      }
+      reconnectStallWatchdog.arm(at);
+      pushStatus({
+        connected: false,
+        lastDisconnect: {
+          at,
+          status: parseGatewayCloseCode(message),
+        },
+      });
+      clearHelloWatch();
+      return;
+    }
+    if (!message.includes("WebSocket connection opened")) {
+      return;
+    }
+    startHelloWatch(at);
+  };
   gatewayEmitter?.on("debug", onGatewayDebug);
 
-  // If the gateway is already connected when the lifecycle starts (the
-  // "WebSocket connection opened" debug event was emitted before we
-  // registered the listener above), push the initial connected status now.
-  // Guard against lifecycleStopping: if the abortSignal was already aborted,
-  // onAbort() ran synchronously above and pushed connected: false — don't
-  // contradict it with a spurious connected: true.
-  if (gateway?.isConnected && !lifecycleStopping) {
+  // Startup guards — must run after the debug listener is registered so they
+  // don't contradict a concurrent abort (onAbort pushed connected: false).
+  if (!lifecycleStopping) {
     const at = Date.now();
-    pushStatus({
-      ...createConnectedChannelStatusPatch(at),
-      lastDisconnect: null,
-    });
+    if (gateway?.isConnected) {
+      // Gateway reached READY/RESUMED before runDiscordGatewayLifecycle was called;
+      // push initial connected status now.
+      pushStatus({
+        ...createConnectedChannelStatusPatch(at),
+        lastDisconnect: null,
+      });
+    } else {
+      // Race guard: Carbon fires "WebSocket connection opened" inside registerClient
+      // (called from new Client()) before we registered the debug listener above.
+      // If the socket is already OPEN but READY hasn't arrived yet, the debug
+      // event was missed.  Start the hello poll so READY is still detected.
+      const gwWithWs = gateway as
+        | (import("@buape/carbon/gateway").GatewayPlugin & {
+            ws?: { readyState: number } | null;
+          })
+        | undefined;
+      if (gwWithWs?.ws?.readyState === 1 /* WebSocket.OPEN */) {
+        startHelloWatch(at);
+      }
+    }
   }
 
   let sawDisallowedIntents = false;

@@ -984,4 +984,71 @@ describe("agentCommand", () => {
       expect(runtime.log).toHaveBeenCalledWith("ok");
     });
   });
+
+  describe("bashElevated defaults", () => {
+    async function runIngressForElevatedTest(params: {
+      senderIsOwner: boolean;
+      elevatedEnabled?: boolean;
+    }) {
+      return withTempHome(async (home) => {
+        const store = path.join(home, "sessions.json");
+        configSpy.mockReturnValue({
+          agents: {
+            defaults: {
+              model: { primary: "anthropic/claude-opus-4-5" },
+              models: { "anthropic/claude-opus-4-5": {} },
+              workspace: path.join(home, "openclaw"),
+            },
+          },
+          tools:
+            params.elevatedEnabled !== undefined
+              ? { elevated: { enabled: params.elevatedEnabled } }
+              : undefined,
+          session: { store, mainKey: "main" },
+        });
+        await agentCommandFromIngress(
+          { message: "hi", to: "+1555", senderIsOwner: params.senderIsOwner },
+          runtime,
+        );
+        return vi.mocked(runEmbeddedPiAgent).mock.calls.at(-1)?.[0];
+      });
+    }
+
+    it("sets bashElevated.enabled=false when tools.elevated.enabled is false", async () => {
+      const callArgs = await runIngressForElevatedTest({
+        senderIsOwner: true,
+        elevatedEnabled: false,
+      });
+      expect(callArgs?.bashElevated?.enabled).toBe(false);
+      expect(callArgs?.bashElevated?.allowed).toBe(false);
+    });
+
+    it("sets bashElevated.allowed=true when senderIsOwner=true and elevated is enabled", async () => {
+      const callArgs = await runIngressForElevatedTest({
+        senderIsOwner: true,
+        elevatedEnabled: true,
+      });
+      expect(callArgs?.bashElevated?.enabled).toBe(true);
+      expect(callArgs?.bashElevated?.allowed).toBe(true);
+    });
+
+    it("sets bashElevated.allowed=false when senderIsOwner=false even if elevated is enabled", async () => {
+      const callArgs = await runIngressForElevatedTest({
+        senderIsOwner: false,
+        elevatedEnabled: true,
+      });
+      expect(callArgs?.bashElevated?.enabled).toBe(true);
+      expect(callArgs?.bashElevated?.allowed).toBe(false);
+    });
+
+    it("defaults bashElevated.enabled=true when tools.elevated is not configured", async () => {
+      const callArgs = await runIngressForElevatedTest({ senderIsOwner: true });
+      expect(callArgs?.bashElevated?.enabled).toBe(true);
+    });
+
+    it("sets bashElevated.defaultLevel to ask", async () => {
+      const callArgs = await runIngressForElevatedTest({ senderIsOwner: true });
+      expect(callArgs?.bashElevated?.defaultLevel).toBe("ask");
+    });
+  });
 });
