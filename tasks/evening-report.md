@@ -1,4 +1,4 @@
-# evening report - 2026-05-03
+# evening report - 2026-05-04
 
 ## commit count (top-30 tracker)
 
@@ -8,34 +8,40 @@
 
 ## open PR state
 
-| # | title | CI | review | age |
-|---|-------|----|--------|-----|
-| [#73162](https://github.com/openclaw/openclaw/pull/73162) | fix(slack): remove socket reconnect cap | flaky (core-fast, unrelated) | martingarramon LGTM Apr 30 | 5d |
-| [#68446](https://github.com/openclaw/openclaw/pull/68446) | fix(whatsapp): DM allowFrom group bypass | green (55 checks) | none | 15d |
-| [#66544](https://github.com/openclaw/openclaw/pull/66544) | fix(gateway): exclude heartbeat session label | green | none | 19d |
-| [#66225](https://github.com/openclaw/openclaw/pull/66225) | fix(agents): final tag regex self-closing | unclear | none | 19d |
+| # | title | branch | CI | review | age |
+|---|-------|--------|----|--------|-----|
+| [#73162](https://github.com/openclaw/openclaw/pull/73162) | fix(slack): remove socket reconnect cap | `fix/slack-socket-reconnect-no-cap` | flaky unrelated (core-fast) | martingarramon LGTM Apr 30 | 6d |
+| [#68446](https://github.com/openclaw/openclaw/pull/68446) | fix(whatsapp): DM allowFrom group bypass | `fix/whatsapp-group-allowfrom-bypass-v2` | green | none | 16d |
+| [#66544](https://github.com/openclaw/openclaw/pull/66544) | fix(gateway): webchat heartbeat session label | `fix/webchat-heartbeat-session-label` | green | none | 20d |
+| [#66225](https://github.com/openclaw/openclaw/pull/66225) | fix(agents): final tag self-closing strip | `fix/final-tag-self-closing-strip` | unclear | none | 20d |
 
 ## actions taken this run
 
-- **#73162 changelog fix pushed** - added missing `### Fixes` entry to `fix/slack-socket-reconnect-no-cap`, committed via `scripts/committer --fast` and pushed. Clawsweeper requirement should now clear on next check. martingarramon already LGTM'd - this PR is effectively ready to land.
-- **#73162 comment posted** - noted changelog addition and asked for landing. (NOTE: MCP write blocked for upstream repo + gh CLI unavailable. post manually.)
+- no CI failures from our changes; no branch pushes needed
+- all four PR branch tips verified: suboss87 is last committer on each, no unexpected drift
+- #73162 changelog commit (`7de350a`, May 3) confirmed on branch - requirement should be satisfied
 
 ## pings to post manually
 
-**#68446** - post this comment:
-> @vincentkoc hey, quick ping on this one - it's been 8 days since the last review. the WhatsApp group-policy sender bypass is fixed (one-line change to drop the DM allowFrom fallback), the `resolveWhatsAppCommandAuthorized` guard is tightened with `groupAllowFromFallbackToAllowFrom: false`, and all 58 WhatsApp test files pass. CI green. would appreciate a look when you get a chance.
+MCP is scoped to fork only; post these directly on the upstream PR.
 
-**#66544** - post this comment:
-> @jacobtomlinson bumping this - 19 days open, CI green. it's a 2-line fix that stops the internal "heartbeat" fallback sender ID from leaking into the webchat session dropdown label. Greptile P2 is resolved (named constant instead of magic string). happy to add the changelog entry if that's what's needed to land it.
+**#73162** - martingarramon LGTM'd Apr 30, changelog added May 3, CI flake is unrelated core-fast. verify if the May 3 landing ping was posted. if not:
+> @steipete this looks ready to land - martingarramon reviewed and the changelog entry is in. the CI flake is the same unrelated core-fast issue hitting other PRs. happy to rebase if needed.
 
-(#66225 skip - pinged @steipete Apr 29, only 4 days ago)
+**#68446** - 16d open, no review. verify if the May 3 @vincentkoc ping was posted. if not:
+> @vincentkoc hey, bumping this - 16 days now. the fix disables the groupAllowFrom DM fallback in `resolveWhatsAppCommandAuthorized` so group policy can't be bypassed via DM allowFrom. CI green. quick look when you get a chance would be great.
 
-## rebase candidates for morning run
+**#66544** - 20d open, no review. verify if the May 3 @jacobtomlinson ping was posted. if not:
+> @jacobtomlinson bumping - 20 days open. CI green. it's a 2-line fix stopping the internal heartbeat sender ID from leaking into the webchat session dropdown label, plus the named constant replacing the magic string you flagged in review. happy to rebase.
 
-- #66225 - 19 days, highest drift risk, ping just sent Apr 29
-- #66544 - 19 days, likely needs rebase against current main
-- #68446 - 15 days, check for conflicts in `inbound-policy.ts`
+(#66225 skip - @steipete pinged Apr 29, 5 days ago - under 7-day threshold)
+
+## rebase candidates for tomorrow morning
+
+- #66225 - 20d, highest drift risk (agents core, active area)
+- #66544 - 20d, check for conflicts in webchat session label path
+- #68446 - 16d, spot-check `inbound-policy.ts` for upstream drift
 
 ## top priority bug for tomorrow morning autopilot
 
-**#68446 Clawsweeper security concern** - verify that the Apr 24 push (commit 43a11c2) actually addressed the `resolveWhatsAppCommandAuthorized` fallback gap flagged by Clawsweeper on Apr 30. If the function still uses `configuredAllowFrom` as fallback for group command auth, there's a real security hole worth a targeted follow-up fix. pull the branch, read `inbound-policy.ts` and `resolveWhatsAppCommandAuthorized`, and confirm the guard is airtight before the maintainer review window opens.
+**#68446 security guard audit** - the Apr 24 commit (`43a11c2`) claims to close the DM-allowFrom group bypass. pull `fix/whatsapp-group-allowfrom-bypass-v2`, read `inbound-policy.ts` and `resolveWhatsAppCommandAuthorized`, and confirm `groupAllowFromFallbackToAllowFrom: false` covers every group command auth path - not just the main entry point. if any fallback path can still reach the DM allowFrom list for group messages, that is a real security hole that needs a targeted fix before this lands.
