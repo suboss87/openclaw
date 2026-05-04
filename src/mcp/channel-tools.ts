@@ -34,7 +34,7 @@ export function registerChannelMcpTools(server: McpServer, bridge: OpenClawChann
     async (args) => {
       const conversations = await bridge.listConversations(args);
       return {
-        ...summarizeResult("conversations", conversations.length),
+        content: [{ type: "text" as const, text: JSON.stringify(conversations) }],
         structuredContent: { conversations },
       };
     },
@@ -69,7 +69,7 @@ export function registerChannelMcpTools(server: McpServer, bridge: OpenClawChann
     async ({ session_key, limit }) => {
       const messages = await bridge.readMessages(session_key, limit ?? 20);
       return {
-        ...summarizeResult("messages", messages.length),
+        content: [{ type: "text" as const, text: JSON.stringify(messages) }],
         structuredContent: { messages },
       };
     },

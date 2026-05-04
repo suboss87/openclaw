@@ -448,6 +448,54 @@ describe("openclaw channel mcp server", () => {
       ).resolves.toBeUndefined();
     });
 
+    test("conversations_list returns data in primary content field", async () => {
+      const mcp = await connectMcpWithoutGateway({ claudeChannelMode: "off" });
+      try {
+        const gatewayRequest = vi.fn(async () => ({
+          sessions: [
+            {
+              key: "agent:main:main",
+              channel: "telegram",
+              deliveryContext: { to: "-100123", accountId: "acct-1" },
+            },
+          ],
+        }));
+        attachReadyGateway(mcp.bridge, gatewayRequest);
+        const result = (await mcp.client.callTool({
+          name: "conversations_list",
+          arguments: {},
+        })) as { content: Array<{ type: string; text: string }> };
+        expect(result.content).toHaveLength(1);
+        expect(result.content[0].type).toBe("text");
+        const parsed = JSON.parse(result.content[0].text);
+        expect(Array.isArray(parsed)).toBe(true);
+        expect(parsed[0]).toMatchObject({ sessionKey: "agent:main:main", channel: "telegram" });
+      } finally {
+        await mcp.close();
+      }
+    });
+
+    test("messages_read returns data in primary content field", async () => {
+      const mcp = await connectMcpWithoutGateway({ claudeChannelMode: "off" });
+      try {
+        const gatewayRequest = vi.fn(async () => ({
+          messages: [{ role: "assistant", content: [{ type: "text", text: "hello" }] }],
+        }));
+        attachReadyGateway(mcp.bridge, gatewayRequest);
+        const result = (await mcp.client.callTool({
+          name: "messages_read",
+          arguments: { session_key: "agent:main:main" },
+        })) as { content: Array<{ type: string; text: string }> };
+        expect(result.content).toHaveLength(1);
+        expect(result.content[0].type).toBe("text");
+        const parsed = JSON.parse(result.content[0].text);
+        expect(Array.isArray(parsed)).toBe(true);
+        expect(parsed[0]).toMatchObject({ role: "assistant" });
+      } finally {
+        await mcp.close();
+      }
+    });
+
     test("waits for queued events through the MCP tool", async () => {
       const mcp = await connectMcpWithoutGateway({ claudeChannelMode: "off" });
       try {
