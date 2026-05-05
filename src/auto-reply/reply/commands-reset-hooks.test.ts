@@ -432,7 +432,7 @@ describe("handleCommands reset hooks", () => {
     expect(resetMocks.resetConfiguredBindingTargetInPlace).not.toHaveBeenCalled();
   });
 
-  it("acknowledges bare /reset without falling through to model execution", async () => {
+  it("fires reset hooks and falls through for bare /reset so the agent can greet", async () => {
     const params = buildResetParams("/reset", {
       commands: { text: true },
       channels: { whatsapp: { allowFrom: ["*"] } },
@@ -440,16 +440,13 @@ describe("handleCommands reset hooks", () => {
 
     const result = await maybeHandleResetCommand(params);
 
-    expect(result).toEqual({
-      shouldContinue: false,
-      reply: { text: "✅ Session reset." },
-    });
+    expect(result).toBeNull();
     expect(triggerInternalHookMock).toHaveBeenCalledWith(
       expect.objectContaining({ type: "command", action: "reset" }),
     );
   });
 
-  it("acknowledges bare /new without falling through to model execution", async () => {
+  it("fires reset hooks and falls through for bare /new so the agent can greet", async () => {
     const params = buildResetParams("/new", {
       commands: { text: true },
       channels: { whatsapp: { allowFrom: ["*"] } },
@@ -457,10 +454,7 @@ describe("handleCommands reset hooks", () => {
 
     const result = await maybeHandleResetCommand(params);
 
-    expect(result).toEqual({
-      shouldContinue: false,
-      reply: { text: "✅ New session started." },
-    });
+    expect(result).toBeNull();
     expect(triggerInternalHookMock).toHaveBeenCalledWith(
       expect.objectContaining({ type: "command", action: "new" }),
     );
