@@ -469,6 +469,7 @@ export const handlePluginsCommand: CommandHandler = async (params, allowTextComm
     structuredClone(loaded.config),
     plugin.id,
     pluginsCommand.action === "enable",
+    { updateChannelConfig: false },
   );
   const validated = validateConfigObjectWithPlugins(next);
   if (!validated.ok) {
