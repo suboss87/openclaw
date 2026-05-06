@@ -55,4 +55,37 @@ describe("createProcessedMessageTracker", () => {
     expect(tracker.has("evt-2")).toBe(true);
     expect(tracker.claim("evt-2")).toEqual({ kind: "duplicate" });
   });
+
+  it("blocks concurrent claims for the same id while a task is in-flight", async () => {
+    const tracker = createProcessedMessageTracker();
+
+    let resolveTask!: () => void;
+    const taskDone = new Promise<void>((resolve) => {
+      resolveTask = resolve;
+    });
+
+    const firstClaim = tracker.claim("flag-1");
+    expect(firstClaim.kind).toBe("claimed");
+
+    // Second claim before commit/release sees "duplicate"
+    expect(tracker.claim("flag-1")).toEqual({ kind: "duplicate" });
+
+    resolveTask();
+    await taskDone;
+
+    tracker.commit("flag-1");
+
+    // After commit, further claims are still duplicate (permanently processed)
+    expect(tracker.claim("flag-1")).toEqual({ kind: "duplicate" });
+  });
+
+  it("allows retry after release", () => {
+    const tracker = createProcessedMessageTracker();
+
+    tracker.claim("flag-2");
+    tracker.release("flag-2");
+
+    // After release (e.g. on poke error), the flag can be claimed again
+    expect(tracker.claim("flag-2")).toEqual({ kind: "claimed" });
+  });
 });
