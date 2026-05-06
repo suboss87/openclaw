@@ -11,6 +11,7 @@ import {
   previewQueueSummaryPrompt,
   waitForQueueDebounce,
 } from "../../../utils/queue-helpers.js";
+import { ReplyRunAlreadyActiveError, replyRunRegistry } from "../reply-run-registry.js";
 import { isRoutableChannel } from "../route-reply.js";
 import { FOLLOWUP_QUEUES } from "./state.js";
 import type { FollowupRun } from "./types.js";
@@ -156,115 +157,128 @@ export function scheduleFollowupDrain(
       const collectState = { forceIndividualCollect: false };
       while (queue.items.length > 0 || queue.droppedCount > 0) {
         await waitForQueueDebounce(queue);
-        if (queue.mode === "collect") {
-          // Once the batch is mixed, never collect again within this drain.
-          // Prevents “collect after shift” collapsing different targets.
-          //
-          // Debug: `pnpm test src/auto-reply/reply/reply-flow.test.ts`
-          // Check if messages span multiple channels.
-          // If so, process individually to preserve per-message routing.
-          const isCrossChannel = hasCrossChannelItems(queue.items, resolveCrossChannelKey);
+        try {
+          if (queue.mode === "collect") {
+            // Once the batch is mixed, never collect again within this drain.
+            // Prevents "collect after shift" collapsing different targets.
+            //
+            // Debug: `pnpm test src/auto-reply/reply/reply-flow.test.ts`
+            // Check if messages span multiple channels.
+            // If so, process individually to preserve per-message routing.
+            const isCrossChannel = hasCrossChannelItems(queue.items, resolveCrossChannelKey);
 
-          const collectDrainResult = await drainCollectQueueStep({
-            collectState,
-            isCrossChannel,
-            items: queue.items,
-            run: effectiveRunFollowup,
-          });
-          if (collectDrainResult === "empty") {
-            const summaryOnlyPrompt = previewQueueSummaryPrompt({ state: queue, noun: "message" });
-            const run = queue.lastRun;
-            if (summaryOnlyPrompt && run) {
+            const collectDrainResult = await drainCollectQueueStep({
+              collectState,
+              isCrossChannel,
+              items: queue.items,
+              run: effectiveRunFollowup,
+            });
+            if (collectDrainResult === "empty") {
+              const summaryOnlyPrompt = previewQueueSummaryPrompt({
+                state: queue,
+                noun: "message",
+              });
+              const run = queue.lastRun;
+              if (summaryOnlyPrompt && run) {
+                await effectiveRunFollowup({
+                  prompt: summaryOnlyPrompt,
+                  run,
+                  enqueuedAt: Date.now(),
+                  ...collectQueuedImages(queue.items),
+                });
+                clearQueueSummaryState(queue);
+                continue;
+              }
+              break;
+            }
+            if (collectDrainResult === "drained") {
+              continue;
+            }
+
+            const items = queue.items.slice();
+            const summary = previewQueueSummaryPrompt({ state: queue, noun: "message" });
+            const authGroups = splitCollectItemsByAuthorization(items);
+            if (authGroups.length === 0) {
+              const run = queue.lastRun;
+              if (!summary || !run) {
+                break;
+              }
               await effectiveRunFollowup({
-                prompt: summaryOnlyPrompt,
+                prompt: summary,
                 run,
                 enqueuedAt: Date.now(),
-                ...collectQueuedImages(queue.items),
               });
               clearQueueSummaryState(queue);
               continue;
             }
-            break;
-          }
-          if (collectDrainResult === "drained") {
+
+            let pendingSummary = summary;
+            for (const groupItems of authGroups) {
+              const run = groupItems.at(-1)?.run ?? queue.lastRun;
+              if (!run) {
+                break;
+              }
+
+              const routing = resolveOriginRoutingMetadata(groupItems);
+              const prompt = buildCollectPrompt({
+                title: "[Queued messages while agent was busy]",
+                items: groupItems,
+                summary: pendingSummary,
+                renderItem: renderCollectItem,
+              });
+              await effectiveRunFollowup({
+                prompt,
+                run,
+                enqueuedAt: Date.now(),
+                ...routing,
+                ...collectQueuedImages(groupItems),
+              });
+              queue.items.splice(0, groupItems.length);
+              if (pendingSummary) {
+                clearQueueSummaryState(queue);
+                pendingSummary = undefined;
+              }
+            }
             continue;
           }
 
-          const items = queue.items.slice();
-          const summary = previewQueueSummaryPrompt({ state: queue, noun: "message" });
-          const authGroups = splitCollectItemsByAuthorization(items);
-          if (authGroups.length === 0) {
+          const summaryPrompt = previewQueueSummaryPrompt({ state: queue, noun: "message" });
+          if (summaryPrompt) {
             const run = queue.lastRun;
-            if (!summary || !run) {
+            if (!run) {
               break;
             }
-            await effectiveRunFollowup({
-              prompt: summary,
-              run,
-              enqueuedAt: Date.now(),
-            });
+            if (
+              !(await drainNextQueueItem(queue.items, async (item) => {
+                await effectiveRunFollowup({
+                  prompt: summaryPrompt,
+                  run,
+                  enqueuedAt: Date.now(),
+                  originatingChannel: item.originatingChannel,
+                  originatingTo: item.originatingTo,
+                  originatingAccountId: item.originatingAccountId,
+                  originatingThreadId: item.originatingThreadId,
+                  ...collectQueuedImages([item]),
+                });
+              }))
+            ) {
+              break;
+            }
             clearQueueSummaryState(queue);
             continue;
           }
 
-          let pendingSummary = summary;
-          for (const groupItems of authGroups) {
-            const run = groupItems.at(-1)?.run ?? queue.lastRun;
-            if (!run) {
-              break;
-            }
-
-            const routing = resolveOriginRoutingMetadata(groupItems);
-            const prompt = buildCollectPrompt({
-              title: "[Queued messages while agent was busy]",
-              items: groupItems,
-              summary: pendingSummary,
-              renderItem: renderCollectItem,
-            });
-            await effectiveRunFollowup({
-              prompt,
-              run,
-              enqueuedAt: Date.now(),
-              ...routing,
-              ...collectQueuedImages(groupItems),
-            });
-            queue.items.splice(0, groupItems.length);
-            if (pendingSummary) {
-              clearQueueSummaryState(queue);
-              pendingSummary = undefined;
-            }
-          }
-          continue;
-        }
-
-        const summaryPrompt = previewQueueSummaryPrompt({ state: queue, noun: "message" });
-        if (summaryPrompt) {
-          const run = queue.lastRun;
-          if (!run) {
+          if (!(await drainNextQueueItem(queue.items, effectiveRunFollowup))) {
             break;
           }
-          if (
-            !(await drainNextQueueItem(queue.items, async (item) => {
-              await effectiveRunFollowup({
-                prompt: summaryPrompt,
-                run,
-                enqueuedAt: Date.now(),
-                originatingChannel: item.originatingChannel,
-                originatingTo: item.originatingTo,
-                originatingAccountId: item.originatingAccountId,
-                originatingThreadId: item.originatingThreadId,
-                ...collectQueuedImages([item]),
-              });
-            }))
-          ) {
-            break;
+        } catch (err) {
+          if (err instanceof ReplyRunAlreadyActiveError) {
+            // A new chat.send occupied the guard during the debounce window.
+            // Wait for it to finish, then retry the same queued item.
+            await replyRunRegistry.waitForIdle(key, 15_000);
+            continue;
           }
-          clearQueueSummaryState(queue);
-          continue;
-        }
-
-        if (!(await drainNextQueueItem(queue.items, effectiveRunFollowup))) {
-          break;
+          throw err;
         }
       }
     } catch (err) {
