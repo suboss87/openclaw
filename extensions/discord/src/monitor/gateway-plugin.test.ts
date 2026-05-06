@@ -51,6 +51,11 @@ const { GatewayIntents, GatewayPlugin } = vi.hoisted(() => {
         return;
       }
     }
+
+    disconnect(): void {
+      this.isConnecting = false;
+      this.ws = undefined;
+    }
   }
 
   return { GatewayIntents, GatewayPlugin };
@@ -293,5 +298,64 @@ describe("createDiscordGatewayPlugin", () => {
     staleSocket.emit("message", Buffer.from("{}"));
 
     expect(activitySpy).not.toHaveBeenCalled();
+  });
+
+  it("clears stale isConnecting state and calls super.registerClient after an incomplete prior registration", async () => {
+    const baseRegisterClientSpy = vi.spyOn(GatewayPlugin.prototype, "registerClient");
+    try {
+      const plugin = createPlugin();
+      type MutablePluginState = {
+        gatewayInfo: unknown;
+        isConnecting: boolean;
+        ws: unknown;
+      };
+      const state = plugin as unknown as MutablePluginState;
+
+      // Pre-populate gatewayInfo so no async metadata fetch is needed, then
+      // inject stale socket state as if a prior registerClient call set
+      // isConnecting=true but the handshake never completed.
+      state.gatewayInfo = {
+        url: "wss://gateway.discord.gg",
+        shards: 1,
+        session_start_limit: { total: 1, remaining: 1, reset_after: 0, max_concurrency: 1 },
+      };
+      state.isConnecting = true;
+      state.ws = {};
+
+      await plugin.registerClient({
+        options: { token: "test-token" },
+      } as unknown as Parameters<typeof plugin.registerClient>[0]);
+
+      // disconnect() should have been called to clear the stale state before
+      // attempting a fresh registration.
+      expect(state.isConnecting).toBe(false);
+      expect(state.ws).toBeUndefined();
+      // super.registerClient() should have been called to open a new connection.
+      expect(baseRegisterClientSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      baseRegisterClientSpy.mockRestore();
+    }
+  });
+
+  it("does not call disconnect when no prior socket state exists before registration", async () => {
+    const plugin = createPlugin();
+    type MutablePluginState = { gatewayInfo: unknown; isConnecting: boolean; ws: unknown };
+    const state = plugin as unknown as MutablePluginState;
+
+    // Pre-populate gatewayInfo so no async fetch is needed; no stale socket state.
+    state.gatewayInfo = {
+      url: "wss://gateway.discord.gg",
+      shards: 1,
+      session_start_limit: { total: 1, remaining: 1, reset_after: 0, max_concurrency: 1 },
+    };
+
+    const disconnectSpy = vi.spyOn(plugin as unknown as { disconnect: () => void }, "disconnect");
+    await plugin.registerClient({
+      options: { token: "test-token" },
+    } as unknown as Parameters<typeof plugin.registerClient>[0]);
+
+    // No stale state means disconnect() should NOT be called.
+    expect(disconnectSpy).not.toHaveBeenCalled();
+    disconnectSpy.mockRestore();
   });
 });

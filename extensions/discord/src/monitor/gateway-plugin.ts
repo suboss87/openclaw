@@ -125,6 +125,11 @@ function createGatewayPlugin(params: {
       // connect()->identify() cannot silently drop IDENTIFY (#52372).
       assignGatewayClient(this, client);
 
+      // Snapshot socket state before the async fetch. If the socket was already
+      // started before this call began, it is stale state from a prior incomplete
+      // registration rather than a concurrent connect() during this fetch.
+      const socketStartedBeforeFetch = hasGatewaySocketStarted(this);
+
       if (!this.gatewayInfo || this.gatewayInfoUsedFallback) {
         const resolved = await fetchDiscordGatewayInfoWithTimeout({
           token: client.options.token,
@@ -144,10 +149,15 @@ function createGatewayPlugin(params: {
         await params.testing.registerClient(this, client);
         return;
       }
-      // If the lifecycle timeout already started a socket while metadata was
-      // loading, do not register again; it would close that socket and open another one.
-      if (hasGatewaySocketStarted(this)) {
+      if (!socketStartedBeforeFetch && hasGatewaySocketStarted(this)) {
+        // If the lifecycle timeout already started a socket while metadata was
+        // loading, do not register again; it would close that socket and open another one.
         return;
+      }
+      if (socketStartedBeforeFetch) {
+        // Stale socket state from a prior incomplete registration. Reset it so
+        // connect() can open a fresh connection instead of returning early.
+        this.disconnect();
       }
       return super.registerClient(client);
     }
