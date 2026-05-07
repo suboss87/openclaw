@@ -1350,7 +1350,7 @@ export async function monitorTlonProvider(opts: MonitorTlonOpts = {}): Promise<v
     // Subscribe to foreigns for auto-accepting group invites
     // Always subscribe so we can hot-reload the setting via settings store
     {
-      const processedGroupInvites = new Set<string>();
+      const processedGroupInvites = createProcessedMessageTracker();
 
       // Helper to process pending invites
       const processPendingInvites = async (foreigns: Foreigns) => {
@@ -1359,21 +1359,82 @@ export async function monitorTlonProvider(opts: MonitorTlonOpts = {}): Promise<v
         }
 
         for (const [groupFlag, foreign] of Object.entries(foreigns)) {
-          if (processedGroupInvites.has(groupFlag)) {
+          // claim() atomically marks the flag as in-flight before any await,
+          // so concurrent SSE event callbacks cannot both dispatch group-join
+          // for the same flag.
+          const claimed = processedGroupInvites.claim(groupFlag);
+          if (claimed.kind === "duplicate") {
             continue;
           }
-          if (!foreign.invites || foreign.invites.length === 0) {
-            continue;
-          }
+          try {
+            if (!foreign.invites || foreign.invites.length === 0) {
+              continue;
+            }
 
-          const validInvite = foreign.invites.find((inv) => inv.valid);
-          if (!validInvite) {
-            continue;
-          }
+            const validInvite = foreign.invites.find((inv) => inv.valid);
+            if (!validInvite) {
+              continue;
+            }
 
-          const inviterShip = validInvite.from;
-          // Owner invites are always accepted
-          if (isOwner(inviterShip)) {
+            const inviterShip = validInvite.from;
+            // Owner invites are always accepted
+            if (isOwner(inviterShip)) {
+              try {
+                await api.poke({
+                  app: "groups",
+                  mark: "group-join",
+                  json: {
+                    flag: groupFlag,
+                    "join-all": true,
+                  },
+                });
+                processedGroupInvites.commit(groupFlag);
+                runtime.log?.(`[tlon] Auto-accepted group invite from owner: ${groupFlag}`);
+              } catch (err) {
+                runtime.error?.(`[tlon] Failed to accept group invite from owner: ${String(err)}`);
+              }
+              continue;
+            }
+
+            // Skip if auto-accept is disabled
+            if (!effectiveAutoAcceptGroupInvites) {
+              // If owner is configured, queue approval
+              if (effectiveOwnerShip) {
+                const approval = createPendingApproval({
+                  type: "group",
+                  requestingShip: inviterShip,
+                  groupFlag,
+                });
+                await queueApprovalRequest(approval);
+                processedGroupInvites.commit(groupFlag);
+              }
+              // No owner: leave in-flight release to finally so next event can retry
+              // when the auto-accept setting changes.
+              continue;
+            }
+
+            // Check if inviter is on allowlist
+            const isAllowed = isGroupInviteAllowed(inviterShip, effectiveGroupInviteAllowlist);
+
+            if (!isAllowed) {
+              // If owner is configured, queue approval; otherwise log and mark done.
+              if (effectiveOwnerShip) {
+                const approval = createPendingApproval({
+                  type: "group",
+                  requestingShip: inviterShip,
+                  groupFlag,
+                });
+                await queueApprovalRequest(approval);
+              } else {
+                runtime.log?.(
+                  `[tlon] Rejected group invite from ${inviterShip} (not in groupInviteAllowlist): ${groupFlag}`,
+                );
+              }
+              processedGroupInvites.commit(groupFlag);
+              continue;
+            }
+
+            // Inviter is on allowlist - accept the invite
             try {
               await api.poke({
                 app: "groups",
@@ -1383,67 +1444,18 @@ export async function monitorTlonProvider(opts: MonitorTlonOpts = {}): Promise<v
                   "join-all": true,
                 },
               });
-              processedGroupInvites.add(groupFlag);
-              runtime.log?.(`[tlon] Auto-accepted group invite from owner: ${groupFlag}`);
-            } catch (err) {
-              runtime.error?.(`[tlon] Failed to accept group invite from owner: ${String(err)}`);
-            }
-            continue;
-          }
-
-          // Skip if auto-accept is disabled
-          if (!effectiveAutoAcceptGroupInvites) {
-            // If owner is configured, queue approval
-            if (effectiveOwnerShip) {
-              const approval = createPendingApproval({
-                type: "group",
-                requestingShip: inviterShip,
-                groupFlag,
-              });
-              await queueApprovalRequest(approval);
-              processedGroupInvites.add(groupFlag);
-            }
-            continue;
-          }
-
-          // Check if inviter is on allowlist
-          const isAllowed = isGroupInviteAllowed(inviterShip, effectiveGroupInviteAllowlist);
-
-          if (!isAllowed) {
-            // If owner is configured, queue approval
-            if (effectiveOwnerShip) {
-              const approval = createPendingApproval({
-                type: "group",
-                requestingShip: inviterShip,
-                groupFlag,
-              });
-              await queueApprovalRequest(approval);
-              processedGroupInvites.add(groupFlag);
-            } else {
+              processedGroupInvites.commit(groupFlag);
               runtime.log?.(
-                `[tlon] Rejected group invite from ${inviterShip} (not in groupInviteAllowlist): ${groupFlag}`,
+                `[tlon] Auto-accepted group invite: ${groupFlag} (from ${validInvite.from})`,
               );
-              processedGroupInvites.add(groupFlag);
+            } catch (err) {
+              runtime.error?.(`[tlon] Failed to auto-accept group ${groupFlag}: ${String(err)}`);
             }
-            continue;
-          }
-
-          // Inviter is on allowlist - accept the invite
-          try {
-            await api.poke({
-              app: "groups",
-              mark: "group-join",
-              json: {
-                flag: groupFlag,
-                "join-all": true,
-              },
-            });
-            processedGroupInvites.add(groupFlag);
-            runtime.log?.(
-              `[tlon] Auto-accepted group invite: ${groupFlag} (from ${validInvite.from})`,
-            );
-          } catch (err) {
-            runtime.error?.(`[tlon] Failed to auto-accept group ${groupFlag}: ${String(err)}`);
+          } finally {
+            // release() is a no-op when commit() already ran; it clears the
+            // in-flight mark on early-continue and unhandled exception paths so
+            // those flags stay retryable on the next foreigns event.
+            processedGroupInvites.release(groupFlag);
           }
         }
       };
