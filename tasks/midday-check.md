@@ -1,32 +1,39 @@
-# Midday Check - 2026-05-07
+# Midday Check - 2026-05-08
 
 ## Open PR status (suboss87/openclaw)
 
-20 PRs open, all from April 23 - May 6. No human reviewers have left unresolved
-comments in the last 6 hours. Bot-only reviews (Devin) on PRs 16-20; khaney64's
-comment on PR #16 (test name suggestion) was already addressed in commit 1cc0f6b
-on 2026-05-02.
+4 PRs open, all from January–March 2026. No human reviewer activity in last 6 hours.
 
-| # | title | last human activity |
-|---|-------|---------------------|
-| 20 | fix(tlon): prevent duplicate group-join pokes | none |
-| 19 | fix(discord): clear stale isConnecting state | none |
-| 18 | fix(plugins): skip channel config update on plugin toggle | none |
-| 17 | fix(mcp): include full data in conversations_list | none |
-| 16 | fix(agents): inject stream_options.include_usage | khaney64 addressed 2026-05-02 |
+| PR | title | last human activity |
+|----|-------|---------------------|
+| #73162 | fix(slack): cap reconnect attempts with backoff | none |
+| #68446 | fix(whatsapp): enforce allowFrom per-contact | none |
+| #66544 | fix(heartbeat): include session label in log | none |
+| #66225 | fix(config): accept final tag with trailing content | none |
 
 ## Actions this run
 
-- git identity verified: suboss87@gmail.com
-- upstream remote not reachable via proxy (only suboss87/openclaw accessible)
-- local main reset to origin/main tip (661fbdb)
-- checked PRs 16-20 for human feedback - none pending
-- no fresh bugs hunted: upstream issue list (openclaw/openclaw) not accessible
-  via MCP (restricted to suboss87/openclaw) and git fetch upstream fails
+- git identity verified: suboss87@gmail.com / Subash
+- upstream sync skipped: git fetch upstream blocked by proxy 502; MCP scoped to fork only
+- checked all 4 open PRs for fresh human feedback - none found
+- hunted fresh regression/crash-class bugs on openclaw/openclaw (via public API):
+  - #78881 (node.list TypeError) → competing PR #78980 already open
+  - #79209 (hardlink nlink>1 crash) → competing PR #79215 already open
+  - #79264 (update-sentinel sync race) → competing PR #79276 already open
+  - #78858 (doctor --fix removes whole agent blocks): partial root cause found -
+    `description` field missing from `AgentEntrySchema` in
+    `src/config/zod-schema.agent-runtime.ts`; full-agent removal still unexplained,
+    not confident enough to open a PR
+  - #79254 (Telegram requireMention ignored after 2026.5.6): traced to
+    `activationOverride` from session store overriding config in
+    `extensions/telegram/src/bot-message-context.ts:430`; no clean <30-line fix,
+    no competing PR, but root cause needs more verification before opening
 
 ## Escalations
 
-- upstream/openclaw git remote and MCP access are both blocked in this env
-- can't verify competing PRs against upstream, so bug-hunt step skipped per
-  workflow rules (need to confirm no competing PR before opening one)
-- to unblock: grant MCP access to openclaw/openclaw or configure upstream remote
+- no clean fresh bug found today meeting all criteria (regression/crash, <30 lines,
+  zero competing PR, verified root cause)
+- #78858 worth revisiting: add `description: z.string().optional()` to AgentEntrySchema
+  and AgentConfig if a test can reproduce full-agent doctor-strip from description-only config
+- #79254 worth revisiting: confirm whether session store `groupActivation=mention` is
+  persisted from a prior /activate call and why 2026.5.6 changed the behavior
