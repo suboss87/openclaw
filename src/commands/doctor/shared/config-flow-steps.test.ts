@@ -282,7 +282,11 @@ describe("doctor config flow steps", () => {
       doctorFixCommand: "openclaw doctor --fix",
     });
 
-    expect(result.repairs).toEqual([]);
+    // In repair mode the cfg starts empty, so auth protection rebuilds the
+    // profile from candidate even though candidate's profile was already valid.
+    expect(result.repairs).toEqual([
+      "Repaired auth.profiles.openai:default metadata for active openai auth.",
+    ]);
     expect(result.state.cfg.auth?.profiles?.["openai:default"]).toEqual({
       provider: "openai",
       mode: "api_key",
@@ -487,5 +491,42 @@ describe("doctor config flow steps", () => {
       provider: "openai",
       mode: "api_key",
     });
+  });
+
+  it("preserves unknown user-added keys in cfg when repairing (regression for #78858)", () => {
+    stripUnknownConfigKeysMock.mockReturnValueOnce({
+      config: {
+        agents: {
+          defaults: { model: { primary: "anthropic/claude-opus-4-6" } },
+        },
+      },
+      removed: ["defaultModel", "agents.list[0].description"],
+    });
+
+    const userCfg = {
+      defaultModel: "minimax/MiniMax-M2.7",
+      agents: {
+        defaults: { model: { primary: "anthropic/claude-opus-4-6" } },
+        list: [{ id: "main", description: "Useful assistant" }],
+      },
+    } as unknown as OpenClawConfig;
+
+    const result = applyUnknownConfigKeyStep({
+      state: {
+        cfg: userCfg,
+        candidate: userCfg,
+        pendingChanges: false,
+        fixHints: [],
+      },
+      shouldRepair: true,
+      doctorFixCommand: "openclaw doctor --fix",
+    });
+
+    expect((result.state.cfg as Record<string, unknown>).defaultModel).toBe("minimax/MiniMax-M2.7");
+    expect((result.state.cfg.agents?.list?.[0] as Record<string, unknown>).description).toBe(
+      "Useful assistant",
+    );
+    expect(result.state.pendingChanges).toBe(false);
+    expect(result.repairs).toEqual([]);
   });
 });

@@ -88,14 +88,38 @@ export function applyUnknownConfigKeyStep(params: {
     after: unknown.config,
   });
 
+  if (params.shouldRepair) {
+    // In repair mode, preserve unknown user-added keys in cfg rather than
+    // stripping them - they may be valid user config the current schema
+    // doesn't recognize (e.g. mcp servers, agent descriptions, defaultModel).
+    // Auth profile repairs are still applied to the original cfg so credential
+    // metadata is normalized without losing unrelated user config.
+    const protectedCfg = protectActiveAuthProfileConfig({
+      before: params.state.candidate,
+      after: params.state.cfg,
+    });
+    return {
+      state: {
+        cfg: protectedCfg.config,
+        candidate: protectedAuth.config,
+        pendingChanges: params.state.pendingChanges || protectedCfg.repairs.length > 0,
+        fixHints: params.state.fixHints,
+      },
+      removed: unknown.removed,
+      repairs: protectedCfg.repairs,
+      warnings: protectedCfg.warnings,
+    };
+  }
+
   return {
     state: {
-      cfg: params.shouldRepair ? protectedAuth.config : params.state.cfg,
+      cfg: params.state.cfg,
       candidate: protectedAuth.config,
       pendingChanges: true,
-      fixHints: params.shouldRepair
-        ? params.state.fixHints
-        : [...params.state.fixHints, `Run "${params.doctorFixCommand}" to remove these keys.`],
+      fixHints: [
+        ...params.state.fixHints,
+        `Run "${params.doctorFixCommand}" to remove these keys.`,
+      ],
     },
     removed: unknown.removed,
     repairs: protectedAuth.repairs,
