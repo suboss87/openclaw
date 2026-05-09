@@ -1291,10 +1291,20 @@ export function resolveGatewaySessionThinkingDefault(params: {
 export function getSessionDefaults(
   cfg: OpenClawConfig,
   modelCatalog?: ModelCatalogEntry[],
-  options?: { allowPluginNormalization?: boolean },
+  options?: { allowPluginNormalization?: boolean; agentId?: string },
 ): GatewaySessionsDefaults {
+  let effectiveCfg = cfg;
+  if (options?.agentId) {
+    const agentPrimary = resolveAgentEffectiveModelPrimary(cfg, options.agentId);
+    if (agentPrimary) {
+      effectiveCfg = {
+        ...cfg,
+        agents: { ...cfg.agents, defaults: { ...cfg.agents?.defaults, model: agentPrimary } },
+      };
+    }
+  }
   const resolved = resolveConfiguredModelRef({
-    cfg,
+    cfg: effectiveCfg,
     defaultProvider: DEFAULT_PROVIDER,
     defaultModel: DEFAULT_MODEL,
     allowPluginNormalization: options?.allowPluginNormalization,
@@ -1312,6 +1322,7 @@ export function getSessionDefaults(
     thinkingOptions: thinkingLevels.map((level) => level.label),
     thinkingDefault: resolveGatewaySessionThinkingDefault({
       cfg,
+      agentId: options?.agentId,
       provider: resolved.provider,
       model: resolved.model,
       modelCatalog,
@@ -2130,7 +2141,10 @@ export function listSessionsFromStore(params: {
     totalCount,
     limitApplied,
     hasMore: sessions.length < totalCount,
-    defaults: getSessionDefaults(cfg, params.modelCatalog, { allowPluginNormalization: false }),
+    defaults: getSessionDefaults(cfg, params.modelCatalog, {
+      allowPluginNormalization: false,
+      agentId: opts.agentId,
+    }),
     sessions,
   };
 }
@@ -2231,7 +2245,10 @@ export async function listSessionsFromStoreAsync(params: {
     totalCount,
     limitApplied,
     hasMore: sessions.length < totalCount,
-    defaults: getSessionDefaults(cfg, params.modelCatalog, { allowPluginNormalization: false }),
+    defaults: getSessionDefaults(cfg, params.modelCatalog, {
+      allowPluginNormalization: false,
+      agentId: opts.agentId,
+    }),
     sessions,
   };
 }

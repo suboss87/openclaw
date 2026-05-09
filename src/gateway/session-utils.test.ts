@@ -414,6 +414,31 @@ describe("gateway session utils", () => {
     });
   });
 
+  test("session defaults use per-agent model when agentId is provided", () => {
+    const cfg = {
+      agents: {
+        defaults: {
+          model: { primary: "anthropic/claude-sonnet-4-6" },
+        },
+        list: [
+          {
+            id: "local-agent",
+            model: "ollama/qwen2.5-coder:7b",
+          },
+        ],
+      },
+    } as OpenClawConfig;
+
+    const globalDefaults = getSessionDefaults(cfg);
+    expect(globalDefaults).toMatchObject({
+      modelProvider: "anthropic",
+      model: "claude-sonnet-4-6",
+    });
+
+    const agentDefaults = getSessionDefaults(cfg, undefined, { agentId: "local-agent" });
+    expect(agentDefaults).toMatchObject({ modelProvider: "ollama", model: "qwen2.5-coder:7b" });
+  });
+
   test("session rows use per-agent thinking default from config", () => {
     const cfg = {
       agents: {
