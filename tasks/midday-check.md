@@ -1,39 +1,53 @@
-# Midday Check - 2026-05-08
+# Midday Check - 2026-05-09
 
 ## Open PR status (suboss87/openclaw)
 
-4 PRs open, all from January–March 2026. No human reviewer activity in last 6 hours.
+4 PRs open, all from April 2026. No human reviewer activity in last 6 hours.
 
-| PR | title | last human activity |
-|----|-------|---------------------|
-| #73162 | fix(slack): cap reconnect attempts with backoff | none |
-| #68446 | fix(whatsapp): enforce allowFrom per-contact | none |
-| #66544 | fix(heartbeat): include session label in log | none |
-| #66225 | fix(config): accept final tag with trailing content | none |
+| PR    | Title                                                         | Last Updated |
+| ----- | ------------------------------------------------------------- | ------------ |
+| 73162 | fix(slack): remove socket reconnect attempt cap               | 2026-05-03   |
+| 68446 | fix(whatsapp): stop DM allowFrom fallback into group bypass   | 2026-05-01   |
+| 66544 | fix(gateway): exclude heartbeat sender from session display   | 2026-05-03   |
+| 66225 | fix(agents): align final tag regexes for self-closing variant | 2026-05-01   |
 
-## Actions this run
+## Bug Hunt
+
+Scanned 30 fresh bug issues (filed since 2026-04-27). Most hot regressions were
+claimed within hours by other contributors:
+
+- #79605 (Telegram streaming partial) - competing PR #79696
+- #79490 (SPAWN_ALLOWLIST ignored) - competing PR #79538
+- #79630 (contextEngine afterTurn replay) - competing PRs #79641, #79665
+- #79613 (Control UI model display) - competing PRs #79627, #79628, #79665
+
+Two unclaimed regressions investigated, both ruled out:
+
+- #79676 (Slack buttons not continuing session): tests confirm enqueueSlackBlockActionEvent
+  is the correct path for reply buttons; if/else-if structure is intentional. Root cause
+  of session not waking up is unclear without live trace; not enough to fix blind.
+
+- #79343 (Discord not configured after upgrade): schema looks valid for the reported
+  config; token resolution path handles plaintext. DiscordAccountSchema uses .strict()
+  so undisclosed legacy fields in user's actual config could silently fail, but can't
+  determine which field changed without upstream git history. Not confident enough.
+
+No clean candidate this run.
+
+## Actions This Run
 
 - git identity verified: suboss87@gmail.com / Subash
-- upstream sync skipped: git fetch upstream blocked by proxy 502; MCP scoped to fork only
+- upstream sync skipped: git fetch upstream blocked by proxy 502
 - checked all 4 open PRs for fresh human feedback - none found
-- hunted fresh regression/crash-class bugs on openclaw/openclaw (via public API):
-  - #78881 (node.list TypeError) → competing PR #78980 already open
-  - #79209 (hardlink nlink>1 crash) → competing PR #79215 already open
-  - #79264 (update-sentinel sync race) → competing PR #79276 already open
-  - #78858 (doctor --fix removes whole agent blocks): partial root cause found -
-    `description` field missing from `AgentEntrySchema` in
-    `src/config/zod-schema.agent-runtime.ts`; full-agent removal still unexplained,
-    not confident enough to open a PR
-  - #79254 (Telegram requireMention ignored after 2026.5.6): traced to
-    `activationOverride` from session store overriding config in
-    `extensions/telegram/src/bot-message-context.ts:430`; no clean <30-line fix,
-    no competing PR, but root cause needs more verification before opening
+- scanned 30 fresh bug issues; 6 candidates investigated; all ruled out
+- ready branches from morning run still need manual PR:
+  - suboss87:fix/session-defaults-agent-model (fixes #79592)
+  - suboss87:fix/doctor-fix-preserves-unknown-config-keys (fixes #78858)
+  - suboss87:fix/tlon-group-join-race
 
 ## Escalations
 
-- no clean fresh bug found today meeting all criteria (regression/crash, <30 lines,
-  zero competing PR, verified root cause)
-- #78858 worth revisiting: add `description: z.string().optional()` to AgentEntrySchema
-  and AgentConfig if a test can reproduce full-agent doctor-strip from description-only config
-- #79254 worth revisiting: confirm whether session store `groupActivation=mention` is
-  persisted from a prior /activate call and why 2026.5.6 changed the behavior
+- #79343: if user can share full unredacted channels.discord config, the
+  DiscordAccountSchema/.strict() rejection hypothesis can be confirmed quickly
+- #79676: needs live debug log from after enqueueSlackBlockActionEvent to trace
+  session key resolution; static analysis alone is not enough
