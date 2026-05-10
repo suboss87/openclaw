@@ -186,7 +186,7 @@ type ActiveMemorySearchDebug = {
 
 type ActiveRecallResult =
   | {
-      status: "empty" | "timeout" | "unavailable";
+      status: "empty" | "none" | "timeout" | "unavailable";
       elapsedMs: number;
       summary: string | null;
       searchDebug?: ActiveMemorySearchDebug;
@@ -220,6 +220,7 @@ type RecallSubagentResult = {
   rawReply: string;
   transcriptPath?: string;
   searchDebug?: ActiveMemorySearchDebug;
+  skipped?: true;
 };
 
 type TerminalMemorySearchResult = {
@@ -1307,7 +1308,7 @@ function toSingleLineLogValue(value: unknown): string {
 }
 
 function shouldCacheResult(result: ActiveRecallResult): boolean {
-  return result.status === "ok" || result.status === "empty";
+  return result.status === "ok" || result.status === "empty" || result.status === "none";
 }
 
 function resolveStatusUpdateAgentId(ctx: { agentId?: string; sessionKey?: string }): string {
@@ -2357,7 +2358,7 @@ async function runRecallSubagent(params: {
       modelId: params.currentModelId,
     });
   if (!modelRef) {
-    return { rawReply: "NONE" };
+    return { rawReply: "NONE", skipped: true };
   }
   const subagentSessionId = `active-memory-${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
   const parentSessionKey =
@@ -2477,7 +2478,7 @@ async function runRecallSubagent(params: {
       params.api.logger.debug?.(
         `active-memory: no memory tools registered (memory-core or memory-lancedb required); skipping sub-agent`,
       );
-      return { rawReply: "NONE" };
+      return { rawReply: "NONE", skipped: true };
     }
     throw error;
   } finally {
@@ -2673,7 +2674,7 @@ async function maybeResolveActiveRecall(params: {
       return result;
     }
 
-    const { rawReply, transcriptPath, searchDebug } = raceResult;
+    const { rawReply, transcriptPath, searchDebug, skipped } = raceResult;
     const summary = truncateSummary(
       normalizeActiveSummary(rawReply) ?? "",
       params.config.maxSummaryChars,
@@ -2690,12 +2691,19 @@ async function maybeResolveActiveRecall(params: {
             summary,
             searchDebug,
           }
-        : {
-            status: "empty",
-            elapsedMs: Date.now() - startedAt,
-            summary: null,
-            searchDebug,
-          };
+        : !skipped && normalizeNoRecallValue(rawReply.trim())
+          ? {
+              status: "none",
+              elapsedMs: Date.now() - startedAt,
+              summary: null,
+              searchDebug,
+            }
+          : {
+              status: "empty",
+              elapsedMs: Date.now() - startedAt,
+              summary: null,
+              searchDebug,
+            };
     if (params.config.logging) {
       params.api.logger.info?.(
         `${logPrefix} done status=${result.status} elapsedMs=${String(result.elapsedMs)} summaryChars=${String(result.summary?.length ?? 0)}`,

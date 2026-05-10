@@ -1661,7 +1661,7 @@ describe("active-memory plugin", () => {
       { pluginId: "other-plugin", lines: ["Other Plugin: keep me"] },
       {
         pluginId: "active-memory",
-        lines: [expect.stringContaining("🧩 Active Memory: status=empty")],
+        lines: [expect.stringContaining("🧩 Active Memory: status=none")],
       },
     ]);
   });
@@ -1682,6 +1682,23 @@ describe("active-memory plugin", () => {
     );
 
     expect(result).toBeUndefined();
+  });
+
+  it("reports status=none (not status=empty) when the subagent ran and returned NONE", async () => {
+    const sessionKey = "agent:main:none-status-regression";
+    hoisted.sessionStore[sessionKey] = { sessionId: "s-none-status", updatedAt: 0 };
+    runEmbeddedPiAgent.mockResolvedValueOnce({
+      payloads: [{ text: "NONE" }],
+    });
+
+    await hooks.before_prompt_build(
+      { prompt: "hey, how are you?", messages: [] },
+      { agentId: "main", trigger: "user", sessionKey, messageProvider: "webchat" },
+    );
+
+    const lines = getActiveMemoryLines(sessionKey);
+    expect(lines).toEqual([expect.stringContaining("🧩 Active Memory: status=none")]);
+    expect(lines.join("\n")).not.toContain("status=empty");
   });
 
   it("skips the recall subagent when no registered memory tools match", async () => {
@@ -2219,7 +2236,7 @@ describe("active-memory plugin", () => {
     ).resolves.toMatchObject({ backend: "qmd", hits: 1 });
   });
 
-  it("caches ok and empty results but not timeout_partial results", () => {
+  it("caches ok, empty, and none results but not timeout_partial results", () => {
     expect(
       __testing.shouldCacheResult({
         status: "timeout_partial",
@@ -2242,9 +2259,16 @@ describe("active-memory plugin", () => {
         summary: null,
       }),
     ).toBe(true);
+    expect(
+      __testing.shouldCacheResult({
+        status: "none",
+        elapsedMs: 1,
+        summary: null,
+      }),
+    ).toBe(true);
   });
 
-  it("caches empty recall results", async () => {
+  it("caches none recall results (LLM replied NONE)", async () => {
     api.pluginConfig = {
       agents: ["main"],
       logging: true,
@@ -2280,7 +2304,7 @@ describe("active-memory plugin", () => {
     expect(
       infoLines.some(
         (line: string) =>
-          line.includes(" cached status=empty ") || line.includes(" cached status=empty"),
+          line.includes(" cached status=none ") || line.includes(" cached status=none"),
       ),
     ).toBe(true);
   });
@@ -2898,7 +2922,7 @@ describe("active-memory plugin", () => {
       {
         pluginId: "active-memory",
         lines: [
-          expect.stringContaining("🧩 Active Memory: status=empty"),
+          expect.stringContaining("🧩 Active Memory: status=none"),
           expect.stringContaining(
             "🔎 Active Memory Debug: Memory search is unavailable because the embedding provider quota is exhausted. Top up or switch embedding provider, then retry memory_search.",
           ),
