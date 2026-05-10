@@ -1,53 +1,37 @@
-# Midday Check - 2026-05-09
+# midday check - 2026-05-10
 
-## Open PR status (suboss87/openclaw)
+## open PR status
 
-4 PRs open, all from April 2026. No human reviewer activity in last 6 hours.
+| PR | title | last updated |
+|----|-------|-------------|
+| #73162 | fix(slack): remove socket reconnect attempt cap | 2026-05-03 |
+| #68446 | fix(whatsapp): DM allowFrom fallback into group policy | 2026-05-01 |
+| #66544 | fix(gateway): exclude heartbeat sender from session display | 2026-05-03 |
+| #66225 | fix(agents): align final tag regexes for self-closing variant | 2026-05-01 |
 
-| PR    | Title                                                         | Last Updated |
-| ----- | ------------------------------------------------------------- | ------------ |
-| 73162 | fix(slack): remove socket reconnect attempt cap               | 2026-05-03   |
-| 68446 | fix(whatsapp): stop DM allowFrom fallback into group bypass   | 2026-05-01   |
-| 66544 | fix(gateway): exclude heartbeat sender from session display   | 2026-05-03   |
-| 66225 | fix(agents): align final tag regexes for self-closing variant | 2026-05-01   |
+note: MCP tools are scoped to suboss87/openclaw - PR comments on openclaw/openclaw not readable this session.
 
-## Bug Hunt
+## actions this run
 
-Scanned 30 fresh bug issues (filed since 2026-04-27). Most hot regressions were
-claimed within hours by other contributors:
+- git identity confirmed: suboss87@gmail.com / Subash
+- upstream sync blocked: `git fetch upstream` returns 502 (proxy not routing openclaw/openclaw)
+- PR comment check: could not read comments on the 4 open PRs (MCP restriction)
+- scanned 30 fresh bugs (label:bug, no:assignee, created since 2026-04-28)
 
-- #79605 (Telegram streaming partial) - competing PR #79696
-- #79490 (SPAWN_ALLOWLIST ignored) - competing PR #79538
-- #79630 (contextEngine afterTurn replay) - competing PRs #79641, #79665
-- #79613 (Control UI model display) - competing PRs #79627, #79628, #79665
+fresh bugs already covered by other contributors:
+- #79428 contextWindow 4k < compaction floor 20k: 3 competing PRs (#79429, #79468, #79911)
+- #79490 SPAWN_ALLOWLIST ignored in docker: 2 competing PRs (#79913, #79538)
+- #79804 telegram tool progress leaks despite suppress flag: PR #79924 (updated this morning)
+- #80010 discord /voice list returns no voices: PR #80070
+- #79380 gateway CPU spin ARM64: PR #79418
 
-Two unclaimed regressions investigated, both ruled out:
+bugs without competing PRs that were investigated:
+- #79731 minimax-portal OAuth tokens written but "No API key found" at runtime. traced through provider-registration.ts, model-auth.ts, resolveUsableCustomProviderApiKey, and auth-profiles/oauth.ts. the minimax manifest (added 3a12a7a7 on may 6) introduced nonSecretAuthMarkers: ["minimax-oauth"] which changes isNonSecretApiKeyMarker behavior. before the manifest, resolveUsableCustomProviderApiKey returns the "minimax-oauth" marker at line 173 (since isNonSecretApiKeyMarker was false), then the line-612 guard in model-auth.ts is false so it falls through to profile lookup. after the manifest, resolveUsableCustomProviderApiKey returns null (isNonSecretApiKeyMarker is now true, skips line-173 branch, no other branch matches). in both cases the code should reach the profile lookup. couldn't confirm exact break without live repro.
+- #79343 discord shows "not configured" after upgrade: vague report, no logs, no clear regression in recent discord commits. prior session also investigated this one - skip.
+- #79983 SYSTEM_RUN_DISABLED despite security=full in exec policy: security label - needs owner review per CLAUDE.md.
 
-- #79676 (Slack buttons not continuing session): tests confirm enqueueSlackBlockActionEvent
-  is the correct path for reply buttons; if/else-if structure is intentional. Root cause
-  of session not waking up is unclear without live trace; not enough to fix blind.
+no PR opened this run. no candidate met all five criteria (regression class, zero competing PR, <30 lines, clear repro, file paths verifiable on main).
 
-- #79343 (Discord not configured after upgrade): schema looks valid for the reported
-  config; token resolution path handles plaintext. DiscordAccountSchema uses .strict()
-  so undisclosed legacy fields in user's actual config could silently fail, but can't
-  determine which field changed without upstream git history. Not confident enough.
+## escalations
 
-No clean candidate this run.
-
-## Actions This Run
-
-- git identity verified: suboss87@gmail.com / Subash
-- upstream sync skipped: git fetch upstream blocked by proxy 502
-- checked all 4 open PRs for fresh human feedback - none found
-- scanned 30 fresh bug issues; 6 candidates investigated; all ruled out
-- ready branches from morning run still need manual PR:
-  - suboss87:fix/session-defaults-agent-model (fixes #79592)
-  - suboss87:fix/doctor-fix-preserves-unknown-config-keys (fixes #78858)
-  - suboss87:fix/tlon-group-join-race
-
-## Escalations
-
-- #79343: if user can share full unredacted channels.discord config, the
-  DiscordAccountSchema/.strict() rejection hypothesis can be confirmed quickly
-- #79676: needs live debug log from after enqueueSlackBlockActionEvent to trace
-  session key resolution; static analysis alone is not enough
+none.
