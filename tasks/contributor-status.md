@@ -1,6 +1,6 @@
 # Contributor Status - suboss87
 
-Updated: 2026-05-09
+Updated: 2026-05-10
 
 ## Goal
 
@@ -32,41 +32,53 @@ All PRs must be opened manually via the GitHub web UI by suboss87.
 | 66544 | fix(gateway): exclude heartbeat sender from session display   | 2026-05-03   | open   |
 | 66225 | fix(agents): align final tag regexes for self-closing variant | 2026-05-01   | open   |
 
-No new human comments on any PR in the last 24h. No rebases needed.
+Note: MCP PR comment reads blocked (access denied). Last known: no human comments as of 2026-05-09.
 
 ## Ready Branches (Need Manual PR)
 
-### Branch: fix/session-defaults-agent-model (NEW - 2026-05-09)
+### Branch: fix/active-memory-none-status-regression (NEW - 2026-05-10)
+
+Open PR at: https://github.com/suboss87/openclaw/compare/fix/active-memory-none-status-regression
+Fixes #79812 - Active Memory reports status=empty for normal no-useful-memory results
+
+Root cause: when the recall subagent ran successfully and the LLM responded with
+"NONE" (no memory needed), the code collapsed that into status=empty - the same
+status used for actual failures (missing tools, zero-hit search, no model).
+
+Fix: add status=none for the successful-but-no-memory path. Mark the two
+skipped-subagent paths (no modelRef, missing memory tools) with skipped=true
+so they continue to emit status=empty. shouldCacheResult updated to also
+cache status=none results.
+
+111 tests pass including 2 new regression tests.
+Format check and changed lanes (lint + import cycles) green.
+
+### Branch: fix/session-defaults-agent-model (2026-05-09)
 
 Open PR at: https://github.com/suboss87/openclaw/compare/fix/session-defaults-agent-model
-Fixes #79592 - Agent-level model config ignored at session initialization (filed today, 0 comments, no competing PR)
+Fixes #79592 - Agent-level model config ignored at session initialization
 
-Root cause: `getSessionDefaults` in `session-utils.ts` called `resolveConfiguredModelRef`
-directly without forwarding `opts.agentId`, so `sessions.list` defaults always showed
-`agents.defaults.model.primary` even when the session was scoped to an agent with its own model.
-
-Fix: 3-line signature change + 10-line injection logic. Both list functions now pass `opts.agentId`.
-85 tests pass. Regression test added.
-
-### Branch: fix/doctor-fix-preserves-unknown-config-keys
+### Branch: fix/doctor-fix-preserves-unknown-config-keys (2026-05-09)
 
 Open PR at: https://github.com/suboss87/openclaw/compare/fix/doctor-fix-preserves-unknown-config-keys
-Fixes #78858 - doctor --fix silently strips unknown config keys (mcp definitions, etc.)
+Fixes #78858 - doctor --fix silently strips unknown config keys
 
-### Branch: fix/tlon-group-join-race
+### Branch: fix/tlon-group-join-race (2026-05-09)
 
 Open PR at: https://github.com/suboss87/openclaw/compare/fix/tlon-group-join-race
 
-## Actions This Run (2026-05-09)
+## Actions This Run (2026-05-10)
 
 1. Set git identity to suboss87@gmail.com / Subash - confirmed.
-2. Synced: upstream remote inaccessible via proxy; used fork origin.
-3. Checked 4 open PRs - no new human comments (all last updated May 1-3).
-4. Scanned 20 recent bug issues; most claimed. Selected #79592 (unclaimed, filed today).
-5. Traced `getSessionDefaults` -> sessions.list defaults ignoring per-agent model config.
-6. Fixed: agentId now forwarded through getSessionDefaults options; per-agent model injected
-   into effectiveCfg before resolveConfiguredModelRef runs; thinking default also per-agent.
-7. Merged with upstream's concurrent change (allowPluginNormalization option + pagination fields).
-8. Ran 85 session-utils tests - all pass including new regression test.
-9. Committed on branch fix/session-defaults-agent-model, pushed to fork.
-10. PR creation to upstream blocked - manual open required via GitHub web UI.
+2. upstream remote still inaccessible via proxy; fork used as reference.
+3. Checked open PRs via search API - 4 still open, no new activity since 2026-05-03.
+4. MCP PR comment reads blocked by access restriction to openclaw/openclaw.
+5. Searched recent bug issues (filed 2026-05-08 to 05-10, no:assignee).
+6. Selected #79812: Active Memory status=empty confusion - filed 2026-05-09, no competing PRs.
+7. Traced root cause in extensions/active-memory/index.ts - normalizeNoRecallValue
+   path in maybeResolveActiveRecall collapsed LLM "NONE" reply into status=empty.
+8. Fixed with ~30 LOC: skipped=true flag on skipped paths, status=none for normal NONE.
+9. Updated 3 existing tests + added 2 new tests (regression + shouldCacheResult).
+10. 111 tests pass; format check green; changed lanes (lint + import cycles) green.
+11. Committed and pushed branch fix/active-memory-none-status-regression to fork.
+12. PR to upstream must be opened manually at the compare URL above.
