@@ -624,12 +624,15 @@ describe("scripts/docker/setup.sh", () => {
     expect(compose.match(/TZ: \$\{OPENCLAW_TZ:-UTC\}/g)).toHaveLength(2);
   });
 
-  it("pins container-side workspace and config dirs on both services so host .env paths cannot leak (#77436)", async () => {
+  it("pins container-side state/workspace/config dirs on both services so host paths cannot leak (#77436, #80381)", async () => {
     const compose = await readFile(join(repoRoot, "docker-compose.yml"), "utf8");
-    // Both gateway and CLI services must override the env_file values with the
-    // canonical container paths so a host-style OPENCLAW_WORKSPACE_DIR like
-    // `/Users/<you>/.openclaw/workspace` written to `.env` by docker-setup.sh
-    // cannot reach runtime code inside Linux Docker.
+    // Both gateway and CLI services must override env_file values with the
+    // canonical container paths.  OPENCLAW_STATE_DIR is the authoritative
+    // variable that Node.js config/state resolution checks first; without it a
+    // host-side value from ~/.openclaw/.env (bind-mounted from the host) can
+    // leak in after loadGlobalRuntimeDotEnvFiles runs, causing mkdir EACCES
+    // inside the container (e.g. /mnt/c on WSL2, /Users on macOS).
+    expect(compose.match(/OPENCLAW_STATE_DIR: \/home\/node\/\.openclaw$/gm)).toHaveLength(2);
     expect(compose.match(/OPENCLAW_CONFIG_DIR: \/home\/node\/\.openclaw$/gm)).toHaveLength(2);
     expect(
       compose.match(/OPENCLAW_WORKSPACE_DIR: \/home\/node\/\.openclaw\/workspace$/gm),

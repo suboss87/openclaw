@@ -8,12 +8,16 @@ services:
     environment:
       HOME: /home/node
       TERM: xterm-256color
-      # Pin container-side workspace and config paths so host values written to
-      # `.env` (used by Compose for the bind-mount source below) cannot leak
-      # into runtime code that resolves these env vars inside the container.
-      # Without this override, a macOS host path like /Users/<you>/.openclaw/...
-      # imported from .env caused first-reply `mkdir '/Users'` EACCES failures
-      # in Linux Docker (#77436).
+      # Pin container-side state/workspace/config paths so host values written
+      # to `.env` (or loaded from the bind-mounted ~/.openclaw/.env) cannot
+      # leak into runtime code that resolves these env vars inside the
+      # container.  OPENCLAW_STATE_DIR is the authoritative override for all
+      # Node.js config/state path resolution; OPENCLAW_CONFIG_DIR and
+      # OPENCLAW_WORKSPACE_DIR guard against legacy leakage via env_file.
+      # Without these overrides, host paths like /Users/<you>/.openclaw or
+      # /mnt/c/Users/<you>/.openclaw cause mkdir EACCES failures in the
+      # container (#77436, #80381).
+      OPENCLAW_STATE_DIR: /home/node/.openclaw
       OPENCLAW_CONFIG_DIR: /home/node/.openclaw
       OPENCLAW_WORKSPACE_DIR: /home/node/.openclaw/workspace
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
@@ -98,8 +102,9 @@ services:
     environment:
       HOME: /home/node
       TERM: xterm-256color
-      # Pin container-side workspace and config paths so host values written to
-      # `.env` cannot leak into runtime code via the env_file import (#77436).
+      # Pin container-side state/workspace/config paths (see openclaw-gateway
+      # comment above for full rationale — #77436, #80381).
+      OPENCLAW_STATE_DIR: /home/node/.openclaw
       OPENCLAW_CONFIG_DIR: /home/node/.openclaw
       OPENCLAW_WORKSPACE_DIR: /home/node/.openclaw/workspace
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
