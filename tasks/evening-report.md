@@ -1,74 +1,67 @@
-# Evening Report - 2026-05-10
+# evening report - 2026-05-12
 
-Generated: IST evening / EU end of day / US mid-morning.
+generated: IST evening / EU end of day / US mid-morning
 
-## Commit Count (top-30 tracker)
+## commit count (top-30 tracker)
 
-- Merged commits on openclaw/openclaw main: **5**
-- Target: 46
-- Gap: **41**
+- merged commits on openclaw/openclaw: **5**
+- target: 46
+- gap: **41**
+- no new merges in last 24h (last: #70413, 2026-04-23)
 
-## Open PRs on upstream (openclaw/openclaw)
+## open PR state (suboss87/openclaw fork - 19 PRs staging for upstream)
 
-| # | Title | Area | Age | Last Updated | CI | Review |
-|---|-------|------|-----|--------------|----|--------|
-| 73162 | fix(slack): remove socket reconnect attempt cap | channels | 12d | 2026-05-03 | unknown | none |
-| 68446 | fix(whatsapp): stop DM allowFrom fallback into group bypass | channels | 22d | 2026-05-01 | unknown | none |
-| 66544 | fix(gateway): exclude heartbeat sender from session display | gateway | 26d | 2026-05-03 | unknown | none |
-| 66225 | fix(agents): align final tag regexes for self-closing variant | agents | 26d | 2026-05-01 | unknown | none |
+| #  | title (short)                              | area      | age  | CI                          | pinged        |
+|----|--------------------------------------------|-----------|------|-----------------------------|---------------|
+| 1  | fix(gateway): mcp nested run cleanup       | gateway   | 18d  | green (sec-fast infra only) | 2026-05-11    |
+| 2  | fix(discord): partial GuildThreadChannel   | channels  | 18d  | green (sec-fast infra only) | 2026-05-11    |
+| 3  | fix(configure): preserve custom model      | core      | 17d  | stale CI                    | 2026-05-11    |
+| 4  | fix: openUrl exit code on Windows          | core      | 16d  | stale CI                    | 2026-05-11    |
+| 5  | fix(bonjour): suppress CIAO CANCELLED      | infra     | 15d  | stale CI                    | 2026-05-11    |
+| 6  | fix(image): surface optimize error         | media     | 13d  | stale CI                    | **2026-05-12** |
+| 7  | fix(cron): re-arm timer on catch           | cron      | 13d  | stale CI                    | **2026-05-12** |
+| 8  | fix(web-fetch): charset detection          | infra     | 13d  | stale CI                    | **2026-05-12** |
+| 9  | fix(exec): skill env in Docker sandbox     | exec      | 13d  | stale CI                    | **2026-05-12** |
+| 11 | fix(cron): mirror text to transcript       | cron      | 11d  | stale CI                    | **2026-05-12** |
+| 12 | fix(gateway): Paperclip metadata passthru  | gateway   | 11d  | stale CI                    | **2026-05-12** |
+| 13 | fix(cron): validate disabled cron exprs    | cron      | 11d  | stale CI                    | **2026-05-12** |
+| 14 | fix(exec): bashElevated in gateway path    | exec      | 11d  | stale CI                    | **2026-05-12** |
+| 15 | fix(discord): READY before listener reg    | channels  | 11d  | stale CI                    | **2026-05-12** |
+| 16 | fix(agents): stream_options.include_usage  | agents    | 10d  | stale CI                    | **2026-05-12** |
+| 17 | fix(mcp): full data in channel tools       | gateway   | 7d   | green (sec-fast infra only) | **2026-05-12** |
+| 18 | fix(plugins): skip chan config on toggle   | plugins   | 6d   | green (sec-fast infra only) | **2026-05-12** |
+| 19 | fix(discord): clear stale isConnecting     | channels  | 5d   | green (sec-fast infra only) | **2026-05-12** |
+| 20 | fix(tlon): dedup group-join pokes          | tlon      | 5d   | checks-node-core FAIL, DIRTY| **2026-05-12** |
 
-MCP scoped to fork only - CI and review status not readable this session.
-No human maintainer comments on any of these since 2026-05-03 (confirmed midday).
+## CI notes
 
-**STALE RISK:** #66225 and #66544 are at 26d. stale-close bots commonly trigger at 30d.
-Rebase + ping on both is the first thing tomorrow morning.
+- `security-fast` failure on all PRs is fork-infra only (no upstream secrets in forks) - not our code
+- PR #20 has a real `checks-node-core` failure but the change is tlon-extension-only; failure is
+  almost certainly upstream drift - branch is also `dirty` (needs rebase)
+- PRs #3-#16 have stale/skipped CI from older workflow versions - need rebase to get fresh runs
 
-## Maintainer Pings
+## pings sent this run
 
-MCP blocked from posting to openclaw/openclaw. Pings are 3+ days overdue.
-Subash: send all four manually via GitHub web UI **tonight or first thing tomorrow.**
+- 14 pings posted on PRs #6-#20 (first pings for all 14)
+- PRs #1-#5 covered by yesterday's run (2026-05-11)
+- all 19 PRs now have at least one ping within the last 7 days
 
-- #66225 (agents, 26d): ping @steipete or @jacobtomlinson - final tag regex fix, CI green, ask for a look
-- #66544 (gateway, 26d): ping @steipete or @jacobtomlinson - heartbeat display fix, CI green
-- #68446 (whatsapp, 22d): ping @obviyus or @vincentkoc - allowFrom group isolation fix, CI green
-- #73162 (slack, 12d): ping @obviyus or @vincentkoc - reconnect cap removal, CI green
+## no upstream access this session
 
-## Unanswered Comments
+- gh CLI not installed, MCP restricted to suboss87/openclaw
+- upstream PRs (#66225, #66544, #68446, #73162) status unknown - check manually
+- stale risk: #66225 and #66544 were at 26d as of 2026-05-10 - now 28d, close to 30d bot limit
 
-None. No human maintainer activity on any open PR since 2026-05-03.
+## rebases needed tomorrow morning
 
-## Recent Merges (last 24h)
+- PR #20 - confirmed dirty, must rebase before upstream PR can open
+- PRs #1-#5 (15-18d) - highest drift risk, all need fresh CI runs
+- PRs #6-#16 (11-13d) - stale CI, batch rebase pass after #1-#5
 
-None. Last merge was 2026-04-23 (#70413 via @steipete).
-
-## Ready Branches (Piled Up - Need Manual PR)
-
-| Branch | Fixes | Status |
-|--------|-------|--------|
-| fix/active-memory-none-status-regression | #79812 | NEW today - 111 tests pass |
-| fix/session-defaults-agent-model | #79592 | ready since May 9 |
-| fix/doctor-fix-preserves-unknown-config-keys | #78858 | ready since May 9 |
-| fix/tlon-group-join-race | tlon race | ready since May 9 |
-
-Open all four at: https://github.com/openclaw/openclaw/compare
-4 ready branches with 0 open PRs is leaving runs on the table.
-
-## Rebases Needed Tomorrow
-
-- #66225 (26d) - rebase before pinging, highest priority
-- #66544 (26d) - same
-- #68446 (22d) - spot-check for conflicts
-- #73162 (12d) - probably clean but verify
-
-## Tomorrow Morning Priority Bug
+## top priority bug for tomorrow autopilot
 
 **#79731 - minimax-portal OAuth tokens written but "No API key found" at runtime**
 
-Root cause 60% traced (midday run):
-- minimax manifest (3a12a7a7, May 6) added nonSecretAuthMarkers: ["minimax-oauth"]
-- this flips isNonSecretApiKeyMarker, breaking the resolveUsableCustomProviderApiKey
-  return path in extensions/minimax/src/
-- no competing PRs as of midday
-- need live repro to confirm the exact branch mismatch before filing
-
-Good fit: regression class, clear code path, no competition, fix likely <30 lines.
+from 2026-05-10 evening report: root cause 60% traced, no competing PRs. minimax manifest
+`nonSecretAuthMarkers: ["minimax-oauth"]` flips `isNonSecretApiKeyMarker`, breaking the
+`resolveUsableCustomProviderApiKey` return path. fix likely under 30 lines. start here.
