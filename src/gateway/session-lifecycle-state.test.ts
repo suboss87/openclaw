@@ -87,6 +87,34 @@ describe("session lifecycle state", () => {
     });
   });
 
+  it("maps blocked livenessState on lifecycle end to failed (#80879)", () => {
+    expect(
+      deriveGatewaySessionLifecycleSnapshot({
+        session: {
+          updatedAt: 1_000,
+          status: "running",
+          startedAt: 1_200,
+        },
+        event: {
+          ts: 2_000,
+          data: {
+            phase: "end",
+            startedAt: 1_200,
+            endedAt: 1_900,
+            livenessState: "blocked",
+          },
+        },
+      }),
+    ).toEqual({
+      updatedAt: 1_900,
+      status: "failed",
+      startedAt: 1_200,
+      endedAt: 1_900,
+      runtimeMs: 700,
+      abortedLastRun: false,
+    });
+  });
+
   it("maps aborted lifecycle end events without stopReason to timeout", () => {
     expect(
       derivePersistedSessionLifecyclePatch({
