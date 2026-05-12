@@ -1943,8 +1943,14 @@ export type PluginCommandContext = {
 
 /**
  * Result returned by a plugin command handler.
+ *
+ * Set `suppressReply: true` when the handler delivered the response itself
+ * and the channel should send no fallback or "No response generated" message.
  */
-export type PluginCommandResult = ReplyPayload & { continueAgent?: boolean };
+export type PluginCommandResult = ReplyPayload & {
+  continueAgent?: boolean;
+  suppressReply?: boolean;
+};
 
 /**
  * Handler function for plugin commands.

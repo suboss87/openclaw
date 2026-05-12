@@ -1363,25 +1363,39 @@ export const registerTelegramNativeCommands = ({
           threadId: threadSpec.id,
         });
 
-        const result = normalizeTelegramNativeReplyPayload(
-          await nativeCommandRuntime.executePluginCommand({
-            command: match.command,
-            args: match.args,
-            senderId,
-            channel: "telegram",
-            isAuthorizedSender: commandAuthorized,
-            senderIsOwner,
-            sessionKey: route.sessionKey,
-            sessionId: sessionFileContext.sessionId,
-            sessionFile: sessionFileContext.sessionFile,
-            commandBody,
-            config: runtimeCfg,
-            from,
-            to,
-            accountId,
-            messageThreadId: threadSpec.id,
-          }),
-        );
+        const rawCommandResult = await nativeCommandRuntime.executePluginCommand({
+          command: match.command,
+          args: match.args,
+          senderId,
+          channel: "telegram",
+          isAuthorizedSender: commandAuthorized,
+          senderIsOwner,
+          sessionKey: route.sessionKey,
+          sessionId: sessionFileContext.sessionId,
+          sessionFile: sessionFileContext.sessionFile,
+          commandBody,
+          config: runtimeCfg,
+          from,
+          to,
+          accountId,
+          messageThreadId: threadSpec.id,
+        });
+
+        if (
+          rawCommandResult &&
+          typeof rawCommandResult === "object" &&
+          rawCommandResult.suppressReply === true
+        ) {
+          await cleanupTelegramProgressPlaceholder({
+            bot,
+            chatId,
+            progressMessageId,
+            runtime,
+          });
+          return;
+        }
+
+        const result = normalizeTelegramNativeReplyPayload(rawCommandResult);
 
         if (
           shouldSuppressLocalTelegramExecApprovalPrompt({

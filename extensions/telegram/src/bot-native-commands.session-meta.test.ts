@@ -1230,4 +1230,40 @@ describe("registerTelegramNativeCommands — session metadata", () => {
       }),
     );
   });
+
+  it("skips the empty-response fallback when a plugin command returns suppressReply: true", async () => {
+    pluginRuntimeMocks.executePluginCommand.mockResolvedValue({ suppressReply: true });
+
+    const { handler } = registerAndResolveCommandHandler({
+      commandName: "pulse",
+      cfg: { commands: { allowFrom: { telegram: ["200"] } } } as OpenClawConfig,
+      useAccessGroups: false,
+      pluginCommandSpecs: [
+        {
+          name: "pulse",
+          description: "Liveness check",
+          acceptsArgs: false,
+        },
+      ] as TelegramPluginCommandSpecs,
+    });
+    pluginRuntimeMocks.matchPluginCommand.mockReturnValue({
+      command: {
+        name: "pulse",
+        description: "Liveness check",
+        handler: vi.fn(),
+        pluginId: "test-plugin",
+        pluginName: "Test Plugin",
+        requireAuth: true,
+      },
+      args: undefined,
+    });
+
+    await handler(createTelegramPrivateCommandContext({}));
+
+    expect(deliveryMocks.deliverReplies).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        replies: [{ text: "No response generated. Please try again." }],
+      }),
+    );
+  });
 });
