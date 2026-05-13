@@ -12,6 +12,18 @@ const buildPluginInspectReportMock = vi.hoisted(() => vi.fn());
 const buildAllPluginInspectReportsMock = vi.hoisted(() => vi.fn());
 const formatPluginCompatibilityNoticeMock = vi.hoisted(() => vi.fn(() => "ok"));
 const refreshPluginRegistryAfterConfigMutationMock = vi.hoisted(() => vi.fn(async () => undefined));
+const setPluginEnabledInConfigMock = vi.hoisted(() =>
+  vi.fn((config: OpenClawConfig, id: string, enabled: boolean) => ({
+    ...config,
+    plugins: {
+      ...config.plugins,
+      entries: {
+        ...config.plugins?.entries,
+        [id]: { enabled },
+      },
+    },
+  })),
+);
 
 vi.mock("../../cli/npm-resolution.js", () => ({
   buildNpmInstallRecordFields: vi.fn(),
@@ -68,16 +80,7 @@ vi.mock("../../plugins/status.js", () => ({
 }));
 
 vi.mock("../../plugins/toggle-config.js", () => ({
-  setPluginEnabledInConfig: vi.fn((config: OpenClawConfig, id: string, enabled: boolean) => ({
-    ...config,
-    plugins: {
-      ...config.plugins,
-      entries: {
-        ...config.plugins?.entries,
-        [id]: { enabled },
-      },
-    },
-  })),
+  setPluginEnabledInConfig: setPluginEnabledInConfigMock,
 }));
 
 vi.mock("../../utils.js", async () => {
@@ -306,6 +309,26 @@ describe("handlePluginsCommand", () => {
     expect(result?.reply?.text).toContain('Plugin "superpowers" enabled');
     expect(buildPluginRegistrySnapshotReportMock).toHaveBeenCalled();
     expect(buildPluginDiagnosticsReportMock).not.toHaveBeenCalled();
+  });
+
+  it("does not create a channel config section when toggling a channel plugin", async () => {
+    validateConfigObjectWithPluginsMock.mockImplementation((next) => ({ ok: true, config: next }));
+    buildPluginRegistrySnapshotReportMock.mockReturnValue({
+      workspaceDir: "/tmp/plugins-workspace",
+      plugins: [{ id: "discord", name: "discord", status: "enabled", format: "openclaw", bundleFormat: "claude" }],
+    });
+
+    const params = buildPluginsParams("/plugins disable discord", buildCfg());
+    params.command.senderIsOwner = true;
+
+    await handlePluginsCommand(params, true);
+
+    expect(setPluginEnabledInConfigMock).toHaveBeenCalledWith(
+      expect.anything(),
+      "discord",
+      false,
+      { updateChannelConfig: false },
+    );
   });
 
   it("returns an explicit unauthorized reply for native /plugins list", async () => {
